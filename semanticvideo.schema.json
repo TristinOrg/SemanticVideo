@@ -141,6 +141,19 @@
       "additionalProperties": false,
       "description": "Technical metadata for one audio stream.",
       "properties": {
+        "bit_rate": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bit Rate"
+        },
         "channel_layout": {
           "anyOf": [
             {
@@ -826,6 +839,19 @@
       "additionalProperties": false,
       "description": "Identity and technical facts for the source media asset.",
       "properties": {
+        "bit_rate": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bit Rate"
+        },
         "checksum": {
           "anyOf": [
             {
@@ -1914,6 +1940,19 @@
       "additionalProperties": false,
       "description": "Technical metadata for one video stream.",
       "properties": {
+        "bit_rate": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Bit Rate"
+        },
         "codec": {
           "minLength": 1,
           "title": "Codec",
@@ -2002,14 +2041,10 @@
         },
         "rotation_degrees": {
           "default": 0,
-          "enum": [
-            0,
-            90,
-            180,
-            270
-          ],
+          "exclusiveMaximum": 360,
+          "minimum": 0,
           "title": "Rotation Degrees",
-          "type": "integer"
+          "type": "number"
         },
         "sample_aspect_ratio": {
           "anyOf": [

@@ -44,21 +44,24 @@ came from.
 
 ## Current scope
 
-Milestones 0 and 1 establish the repository and the schema foundation:
+Milestones 0 through 2 establish the schema foundation and technical inspection:
 
 - Pydantic models for media, streams, exact time, segments, annotations,
   entities, evidence, and provenance
 - JSON serialization and JSON Schema export
 - cross-reference and temporal validation
 - an example `.semantic.json` manifest
+- deterministic `ffprobe` inspection for real video files
+- a scriptable `semanticvideo inspect` command with JSON output
 - tests, linting, typing, CI, documentation, and architectural decisions
 
-Media analysis, AI providers, search, EditPlan, OpenTimelineIO, and FFmpeg
-rendering are intentionally scheduled for later milestones.
+Shot detection, semantic AI providers, search, EditPlan, OpenTimelineIO, and
+FFmpeg rendering are intentionally scheduled for later milestones.
 
 ## Quick start
 
-Requirements: Python 3.12+ and [`uv`](https://docs.astral.sh/uv/).
+Requirements: Python 3.12+, [`uv`](https://docs.astral.sh/uv/), and FFmpeg's
+`ffprobe` executable for media inspection.
 
 ```bash
 uv sync --all-groups
@@ -67,6 +70,17 @@ uv run ruff check .
 uv run mypy src
 uv run semanticvideo-schema --output semanticvideo.schema.json
 ```
+
+Inspect a real video without invoking an AI model:
+
+```bash
+uv run semanticvideo inspect GX010231.MP4
+uv run semanticvideo inspect GX010231.MP4 --output GX010231.inspect.json
+```
+
+The command reports source identity, exact duration, container, bitrate, video/audio/
+subtitle streams, codecs, dimensions, frame rate, time base, rotation, color
+metadata, audio layout, language, timestamps, and filesystem facts as JSON.
 
 Load and validate a manifest:
 
@@ -81,8 +95,9 @@ document = SemanticVideoDocument.model_validate_json(
 print(document.media.duration.seconds)
 ```
 
-See [the semantic format](docs/semantic-format.md),
-[architecture](docs/architecture.md), and [roadmap](ROADMAP.md) for details.
+See [media inspection](docs/media-inspection.md),
+[the semantic format](docs/semantic-format.md), [architecture](docs/architecture.md),
+and [roadmap](ROADMAP.md) for details.
 
 ## Project status
 
@@ -98,4 +113,3 @@ example `feat(schema): add exact time ranges`.
 ## License
 
 Licensed under the [Apache License 2.0](LICENSE).
-

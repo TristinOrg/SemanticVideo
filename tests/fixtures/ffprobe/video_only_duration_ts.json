@@ -1,0 +1,28 @@
+{
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "hevc",
+      "codec_type": "video",
+      "width": 1920,
+      "height": 1080,
+      "r_frame_rate": "25/1",
+      "avg_frame_rate": "24/1",
+      "time_base": "1/30000",
+      "duration_ts": 90000,
+      "sample_aspect_ratio": "N/A",
+      "tags": {
+        "rotate": "90",
+        "creation_time": "2026-05-18T12:35:10Z"
+      }
+    }
+  ],
+  "format": {
+      "format_name": "matroska,webm",
+      "size": "2048",
+      "bit_rate": "5461",
+    "tags": {
+      "creation_time": "not-a-date"
+    }
+  }
+}

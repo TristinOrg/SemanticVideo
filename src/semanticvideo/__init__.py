@@ -1,5 +1,6 @@
 """Public API for the SemanticVideo reference implementation."""
 
+from semanticvideo.media import inspect_media, parse_ffprobe_json
 from semanticvideo.schema import (
     AnalysisRun,
     Annotation,
@@ -74,6 +75,8 @@ __all__ = [
     "SubtitleStream",
     "TimeRange",
     "VideoStream",
+    "inspect_media",
+    "parse_ffprobe_json",
 ]
 
 __version__ = "0.1.0"

@@ -27,12 +27,13 @@ class VideoStream(SemanticModel):
     id: Identifier
     index: int = Field(ge=0)
     codec: str = Field(min_length=1)
+    bit_rate: int | None = Field(default=None, ge=0)
     width: int = Field(gt=0)
     height: int = Field(gt=0)
     pixel_format: str | None = None
     frame_rate: RationalRate | None = None
     time_base: RationalRate | None = None
-    rotation_degrees: Literal[0, 90, 180, 270] = 0
+    rotation_degrees: float = Field(default=0, ge=0, lt=360)
     sample_aspect_ratio: RationalRate | None = None
     color_primaries: str | None = None
     color_transfer: str | None = None
@@ -47,6 +48,7 @@ class AudioStream(SemanticModel):
     id: Identifier
     index: int = Field(ge=0)
     codec: str = Field(min_length=1)
+    bit_rate: int | None = Field(default=None, ge=0)
     sample_rate: int = Field(gt=0)
     channels: int = Field(gt=0)
     channel_layout: str | None = None
@@ -81,6 +83,7 @@ class MediaInfo(SemanticModel):
     created_at: datetime | None = None
     checksum: Checksum | None = None
     container_format: str | None = None
+    bit_rate: int | None = Field(default=None, ge=0)
     streams: tuple[Stream, ...]
     metadata: dict[str, str] = Field(default_factory=dict)
 

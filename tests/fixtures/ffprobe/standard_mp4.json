@@ -1,0 +1,56 @@
+{
+  "streams": [
+    {
+      "index": 0,
+      "codec_name": "h264",
+      "codec_long_name": "H.264 / AVC",
+      "codec_type": "video",
+      "bit_rate": "11800000",
+      "width": 3840,
+      "height": 2160,
+      "pix_fmt": "yuv420p",
+      "r_frame_rate": "30000/1001",
+      "avg_frame_rate": "30000/1001",
+      "time_base": "1/30000",
+      "sample_aspect_ratio": "1:1",
+      "color_space": "bt709",
+      "color_transfer": "bt709",
+      "color_primaries": "bt709",
+      "side_data_list": [
+        {
+          "side_data_type": "Display Matrix",
+          "rotation": -90
+        }
+      ]
+    },
+    {
+      "index": 1,
+      "codec_name": "aac",
+      "codec_type": "audio",
+      "bit_rate": "128000",
+      "sample_rate": "48000",
+      "channels": 2,
+      "channel_layout": "stereo",
+      "time_base": "1/48000",
+      "tags": {
+        "language": "jpn"
+      }
+    },
+    {
+      "index": 2,
+      "codec_name": "bin_data",
+      "codec_type": "data"
+    }
+  ],
+  "format": {
+    "filename": "GX010231.MP4",
+    "format_name": "mov,mp4,m4a,3gp,3g2,mj2",
+    "duration": "12.345000",
+    "size": "183728192",
+    "bit_rate": "11906168",
+    "tags": {
+      "major_brand": "isom",
+      "creation_time": "2026-05-18T12:35:10.000000Z"
+    }
+  }
+}
