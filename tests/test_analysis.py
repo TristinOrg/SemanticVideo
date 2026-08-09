@@ -7,11 +7,17 @@ import pytest
 
 from semanticvideo.analysis import pipeline
 from semanticvideo.analysis.signals import AudioLevels, FrameSignals
+from semanticvideo.analysis.transcription import (
+    TranscriptResult,
+    TranscriptSegmentResult,
+    TranscriptWordResult,
+)
 from semanticvideo.analysis.types import ShotDescription
 from semanticvideo.errors import FFmpegExecutionError
 from semanticvideo.schema import (
     AnnotationStatus,
     AudioStream,
+    LocationInfo,
     MediaInfo,
     ProvenanceSource,
     RationalRate,
@@ -38,6 +44,26 @@ class StubDescriber:
             subjects=("traveler",),
             actions=("walking",),
             confidence=0.8,
+        )
+
+
+class StubTranscriber:
+    name = "stub-transcriber"
+    version = "1"
+    provider: str | None = "tests"
+    model: str | None = "stub-audio"
+    source = ProvenanceSource.LOCAL_MODEL
+    status = AnnotationStatus.MACHINE_GENERATED
+
+    def transcribe(self, audio_path: Path) -> TranscriptResult:
+        assert audio_path.is_file()
+        return TranscriptResult(
+            language="en",
+            segments=(
+                TranscriptSegmentResult(
+                    text="timed speech", start_seconds=0.5, end_seconds=1.5
+                ),
+            ),
         )
 
 
@@ -137,8 +163,9 @@ def test_analyze_video_generates_required_editing_information(
         "scene_descriptions",
         "editing_signals",
         "segment_relations",
+        "transcript",
         "audio_levels",
-        "embedded_location",
+        "location",
     )
     assert document.media.bit_rate is None
     assert document.media.metadata == {}
@@ -204,5 +231,71 @@ def test_pipeline_reports_audio_failure_and_embedded_location(
 
     capability = {item.name: item for item in document.capabilities}
     assert capability["audio_levels"].status == "failed"
-    assert capability["embedded_location"].status == "complete"
+    assert capability["location"].status == "complete"
     assert any(annotation.kind == "location" for annotation in document.annotations)
+
+
+def test_pipeline_imports_agent_transcript_and_location(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    media_path = tmp_path / "trip.mp4"
+    media_path.write_bytes(b"clip")
+    configure_pipeline(monkeypatch, media_path)
+    transcript = TranscriptResult(
+        language="en",
+        text="hello",
+        segments=(
+            TranscriptSegmentResult(
+                text="hello",
+                start_seconds=1,
+                end_seconds=2,
+                speaker="host",
+                words=(
+                    TranscriptWordResult(
+                        text="hello", start_seconds=1, end_seconds=1.5
+                    ),
+                ),
+            ),
+        ),
+    )
+
+    document = pipeline.analyze_video(
+        media_path,
+        describer=StubDescriber(),
+        transcript=transcript,
+        imported_location=LocationInfo(name="Tokyo"),
+    )
+
+    assert any(annotation.kind == "speech" for annotation in document.annotations)
+    assert any(annotation.kind == "location" for annotation in document.annotations)
+    capability = {item.name: item for item in document.capabilities}
+    assert capability["transcript"].status == "complete"
+    assert capability["transcript"].provider == "external-agent"
+
+
+def test_pipeline_runs_configured_transcriber(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    media_path = tmp_path / "trip.mp4"
+    media_path.write_bytes(b"clip")
+    configure_pipeline(monkeypatch, media_path)
+
+    def audio(_path: Path, output: Path, **_kwargs: object) -> None:
+        output.write_bytes(b"mp3")
+
+    monkeypatch.setattr(pipeline, "extract_audio", audio)
+    document = pipeline.analyze_video(
+        media_path, describer=StubDescriber(), transcriber=StubTranscriber()
+    )
+    transcript_capability = next(
+        item for item in document.capabilities if item.name == "transcript"
+    )
+    assert transcript_capability.provider == "tests"
+
+    with pytest.raises(ValueError, match="mutually exclusive"):
+        pipeline.analyze_video(
+            media_path,
+            describer=StubDescriber(),
+            transcriber=StubTranscriber(),
+            transcript=TranscriptResult(language="en"),
+        )

@@ -7,6 +7,7 @@ import tempfile
 from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from fractions import Fraction
 from pathlib import Path
 from typing import cast
 
@@ -28,6 +29,11 @@ from semanticvideo.analysis.signals import (
     measure_audio_levels,
     recommended_range,
 )
+from semanticvideo.analysis.transcription import (
+    Transcriber,
+    TranscriptResult,
+    extract_audio,
+)
 from semanticvideo.analysis.types import ShotDescriber, ShotDescription
 from semanticvideo.errors import VideoAnalysisError
 from semanticvideo.media import inspect_media
@@ -48,6 +54,7 @@ from semanticvideo.schema import (
     Evidence,
     GeneratorInfo,
     LocationAnnotation,
+    LocationInfo,
     MediaInfo,
     Provenance,
     ProvenanceSource,
@@ -59,6 +66,9 @@ from semanticvideo.schema import (
     SegmentRelation,
     SegmentRelationType,
     SemanticVideoDocument,
+    SpeechAnnotation,
+    SpeechInfo,
+    SpeechWord,
     Stream,
     TimeRange,
     VideoStream,
@@ -92,6 +102,9 @@ def analyze_video(
     frames_per_shot: int = 3,
     language: str = "en",
     include: Collection[str] = (),
+    transcriber: Transcriber | None = None,
+    transcript: TranscriptResult | None = None,
+    imported_location: LocationInfo | None = None,
 ) -> SemanticVideoDocument:
     """Generate one complete editing-oriented SemanticVideo JSON document."""
 
@@ -100,6 +113,8 @@ def analyze_video(
         raise ValueError(f"unknown optional information: {', '.join(sorted(invalid))}")
     if not 1 <= frames_per_shot <= 9:
         raise ValueError("frames per shot must be between 1 and 9")
+    if transcriber is not None and transcript is not None:
+        raise ValueError("transcriber and imported transcript are mutually exclusive")
 
     started_at = datetime.now(UTC)
     media_path = Path(path)
@@ -122,6 +137,7 @@ def analyze_video(
     )
 
     observations: list[_ShotObservation] = []
+    transcript_result = transcript
     with tempfile.TemporaryDirectory(prefix="semanticvideo-") as temp_directory:
         frame_directory = Path(temp_directory)
         for index, time_range in enumerate(ranges, start=1):
@@ -150,6 +166,15 @@ def analyze_video(
                     frame_signals=analyze_representative_frames(frame_tuple),
                 )
             )
+        if transcriber is not None:
+            audio_file = frame_directory / "transcription.mp3"
+            extract_audio(
+                media_path,
+                audio_file,
+                executable=ffmpeg_executable,
+                timeout_seconds=timeout_seconds,
+            )
+            transcript_result = transcriber.transcribe(audio_file)
 
     relations = _infer_relations(observations)
     duplicate_groups = _duplicate_groups(relations)
@@ -315,12 +340,24 @@ def analyze_video(
 
     location = location_from_metadata(inspected)
     location_capability = CapabilityReport(
-        name="embedded_location",
+        name="location",
         status=CapabilityStatus.OMITTED,
-        message="no embedded location metadata",
+        message="no embedded or agent-supplied location evidence",
     )
-    if location is not None:
-        location_id = "annotation.location.embedded"
+    if location is not None or imported_location is not None:
+        location_info = location.info if location is not None else imported_location
+        assert location_info is not None
+        location_evidence: tuple[Evidence, ...]
+        if location is not None:
+            location_id = "annotation.location.embedded"
+            location_source = ProvenanceSource.EMBEDDED_METADATA
+            location_evidence = (
+                Evidence(type="metadata_keys", value=list(location.metadata_keys)),
+            )
+        else:
+            location_id = "annotation.location.agent"
+            location_source = ProvenanceSource.IMPORT
+            location_evidence = ()
         annotations.append(
             LocationAnnotation(
                 id=location_id,
@@ -331,21 +368,61 @@ def analyze_video(
                 status=AnnotationStatus.MACHINE_GENERATED,
                 provenance=(
                     Provenance(
-                        source=ProvenanceSource.EMBEDDED_METADATA,
+                        source=location_source,
                         generated_at=started_at,
-                        evidence=(
-                            Evidence(
-                                type="metadata_keys",
-                                value=list(location.metadata_keys),
-                            ),
-                        ),
+                        evidence=location_evidence,
                     ),
                 ),
-                value=location.info,
+                value=location_info,
             )
         )
         location_capability = CapabilityReport(
-            name="embedded_location", status=CapabilityStatus.COMPLETE
+            name="location", status=CapabilityStatus.COMPLETE
+        )
+
+    transcription_capability = CapabilityReport(
+        name="transcript",
+        status=CapabilityStatus.OMITTED,
+        message="no transcriber or agent transcript supplied",
+    )
+    if transcript_result is not None:
+        if transcriber is None:
+            transcript_generator = GeneratorInfo(
+                name="semanticvideo-agent-response", version="1", provider="agent"
+            )
+            transcript_source = ProvenanceSource.IMPORT
+            transcript_status = AnnotationStatus.MACHINE_GENERATED
+            transcript_provider = "external-agent"
+        else:
+            transcript_generator = GeneratorInfo(
+                name=transcriber.name,
+                version=transcriber.version,
+                provider=transcriber.provider,
+                model=transcriber.model,
+            )
+            transcript_source = transcriber.source
+            transcript_status = transcriber.status
+            transcript_provider = transcriber.provider or transcriber.name
+        transcript_annotations = _speech_annotations(
+            transcript_result,
+            media.duration.fraction,
+            started_at,
+            transcript_generator,
+            transcript_source,
+            transcript_status,
+        )
+        annotations.extend(transcript_annotations)
+        transcription_capability = CapabilityReport(
+            name="transcript",
+            status=(
+                CapabilityStatus.COMPLETE
+                if transcript_result.segments
+                else CapabilityStatus.PARTIAL
+            ),
+            provider=transcript_provider,
+            message=None
+            if transcript_result.segments
+            else "transcript has no segments",
         )
 
     extensions: dict[str, JsonValue] = {}
@@ -370,6 +447,7 @@ def analyze_video(
             name="editing_signals", status=CapabilityStatus.COMPLETE, required=True
         ),
         CapabilityReport(name="segment_relations", status=CapabilityStatus.COMPLETE),
+        transcription_capability,
         audio_capability,
         location_capability,
     )
@@ -402,6 +480,66 @@ def analyze_video(
         relations=relations,
         extensions=extensions,
     )
+
+
+def _speech_annotations(
+    transcript: TranscriptResult,
+    media_end: Fraction,
+    generated_at: datetime,
+    generator: GeneratorInfo,
+    source: ProvenanceSource,
+    status: AnnotationStatus,
+) -> tuple[SpeechAnnotation, ...]:
+    annotations: list[SpeechAnnotation] = []
+    provenance = Provenance(
+        source=source,
+        generated_at=generated_at,
+        generator=generator,
+    )
+    for index, segment in enumerate(transcript.segments, start=1):
+        start = max(Fraction(0), Fraction(str(segment.start_seconds)))
+        end = min(media_end, Fraction(str(segment.end_seconds)))
+        if end <= start:
+            continue
+        segment_range = TimeRange(
+            start=_fraction_time(start), duration=_fraction_time(end - start)
+        )
+        words: list[SpeechWord] = []
+        for word in segment.words:
+            word_start = Fraction(str(word.start_seconds))
+            word_end = Fraction(str(word.end_seconds))
+            if not (start <= word_start < word_end <= end):
+                continue
+            words.append(
+                SpeechWord(
+                    text=word.text,
+                    time_range=TimeRange(
+                        start=_fraction_time(word_start),
+                        duration=_fraction_time(word_end - word_start),
+                    ),
+                    confidence=word.confidence,
+                )
+            )
+        annotations.append(
+            SpeechAnnotation(
+                id=f"annotation.speech.{index:04d}",
+                time_range=segment_range,
+                confidence=segment.confidence,
+                status=status,
+                provenance=(provenance,),
+                tags=(f"speaker:{segment.speaker}",) if segment.speaker else (),
+                value=SpeechInfo(
+                    text=segment.text,
+                    language=transcript.language,
+                    words=tuple(words),
+                ),
+            )
+        )
+    return tuple(annotations)
+
+
+def _fraction_time(value: Fraction) -> RationalTime:
+    return RationalTime(value=value.numerator, rate=value.denominator)
 
 
 def _infer_relations(

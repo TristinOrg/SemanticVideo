@@ -54,3 +54,11 @@ class FFmpegExecutionError(VideoAnalysisError):
 
 class DescriptionProviderError(VideoAnalysisError):
     """A configured visual-description provider could not return valid content."""
+
+
+class TranscriptionProviderError(VideoAnalysisError):
+    """A configured transcription provider could not return valid timed text."""
+
+
+class AgentTaskError(VideoAnalysisError):
+    """An agent task bundle or response could not be prepared or validated."""

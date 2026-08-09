@@ -97,6 +97,15 @@ set OPENAI_API_KEY=your_key
 uv run semanticvideo analyze GX010231.MP4 --language zh-CN
 ```
 
+No API key is required when Codex or another agent drives the analysis:
+
+```bash
+uv run semanticvideo prepare-agent GX010231.MP4 --output GX010231.task
+# Ask the agent to complete GX010231.task/response.json.
+uv run semanticvideo analyze GX010231.MP4 \
+  --agent-response GX010231.task/response.json
+```
+
 The default `GX010231.semantic.json` always contains core media facts, contiguous
 shot ranges, three representative times per shot, structured scene descriptions,
 editing fitness, audio levels, and segment relations.
@@ -130,7 +139,8 @@ document = SemanticVideoDocument.model_validate_json(
 print(document.media.duration.seconds)
 ```
 
-See [video analysis](docs/video-analysis.md), [media inspection](docs/media-inspection.md),
+See [agent workflow](docs/agent-workflow.md), [video analysis](docs/video-analysis.md),
+[media inspection](docs/media-inspection.md),
 [the semantic format](docs/semantic-format.md), [architecture](docs/architecture.md),
 and [roadmap](ROADMAP.md) for details.
 

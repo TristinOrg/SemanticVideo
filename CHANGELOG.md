@@ -22,3 +22,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   actionable editing signals, explicit capability states, and segment relations.
 - Multi-frame sampling with deterministic exposure, sharpness, visual-change,
   audio-level, embedded-location, duplicate, and same-scene analysis.
+- API-key-free agent task bundles and validated multimodal response import.
+- Optional OpenAI `whisper-1` word/segment timestamp transcription with speech
+  annotations merged into the single semantic manifest.

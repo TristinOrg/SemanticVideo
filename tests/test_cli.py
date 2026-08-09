@@ -162,3 +162,21 @@ def test_scene_threshold_must_be_a_unit_float() -> None:
         build_parser().parse_args(["analyze", "clip.mp4", "--scene-threshold", "1"])
     with pytest.raises(SystemExit):
         build_parser().parse_args(["analyze", "clip.mp4", "--frames-per-shot", "10"])
+
+
+def test_prepare_agent_reports_task_directory(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    output = tmp_path / "task"
+    monkeypatch.setattr(
+        "semanticvideo.cli.main.prepare_agent_task",
+        lambda *_args, **_kwargs: SimpleNamespace(shots=(1, 2)),
+    )
+
+    assert main(["prepare-agent", "clip.mp4", "--output", str(output)]) == 0
+    assert capsys.readouterr().out == f"Wrote agent task with 2 shots to {output}\n"
+
+
+def test_agent_provider_requires_response(capsys: pytest.CaptureFixture[str]) -> None:
+    assert main(["analyze", "clip.mp4", "--provider", "agent"]) == 1
+    assert "requires --agent-response" in capsys.readouterr().err
