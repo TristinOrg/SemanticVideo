@@ -137,6 +137,211 @@
       "title": "Artifact",
       "type": "object"
     },
+    "AudioAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "audio",
+          "default": "audio",
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "items": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "title": "Provenance",
+          "type": "array"
+        },
+        "spatial_region": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpatialRegion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/AnnotationStatus"
+        },
+        "stream_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stream Id"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "time_range": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "value": {
+          "$ref": "#/$defs/AudioInfo"
+        }
+      },
+      "required": [
+        "id",
+        "time_range",
+        "status",
+        "provenance",
+        "value"
+      ],
+      "title": "AudioAnnotation",
+      "type": "object"
+    },
+    "AudioContentType": {
+      "description": "Editing-relevant classes of audible content.",
+      "enum": [
+        "speech",
+        "music",
+        "ambience",
+        "sound_effect",
+        "silence",
+        "noise",
+        "mixed"
+      ],
+      "title": "AudioContentType",
+      "type": "string"
+    },
+    "AudioInfo": {
+      "additionalProperties": false,
+      "description": "Non-transcript audio observations for an interval.",
+      "properties": {
+        "language_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language Hint"
+        },
+        "loudness_lufs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Loudness Lufs"
+        },
+        "music_mood": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Music Mood",
+          "type": "array"
+        },
+        "sound_events": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Sound Events",
+          "type": "array"
+        },
+        "speech_probability": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Speech Probability"
+        },
+        "summary": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        },
+        "tempo_bpm": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Tempo Bpm"
+        },
+        "type": {
+          "$ref": "#/$defs/AudioContentType"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "AudioInfo",
+      "type": "object"
+    },
     "AudioStream": {
       "additionalProperties": false,
       "description": "Technical metadata for one audio stream.",
@@ -231,6 +436,66 @@
       ],
       "title": "AudioStream",
       "type": "object"
+    },
+    "CapabilityReport": {
+      "additionalProperties": false,
+      "description": "Explicitly distinguish absent, failed, and intentionally omitted data.",
+      "properties": {
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Message"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Provider"
+        },
+        "required": {
+          "default": false,
+          "title": "Required",
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/$defs/CapabilityStatus"
+        }
+      },
+      "required": [
+        "name",
+        "status"
+      ],
+      "title": "CapabilityReport",
+      "type": "object"
+    },
+    "CapabilityStatus": {
+      "description": "Whether an analysis capability produced usable information.",
+      "enum": [
+        "complete",
+        "partial",
+        "omitted",
+        "failed"
+      ],
+      "title": "CapabilityStatus",
+      "type": "string"
     },
     "Checksum": {
       "additionalProperties": false,
@@ -367,6 +632,214 @@
         "value"
       ],
       "title": "CustomAnnotation",
+      "type": "object"
+    },
+    "EditingSignals": {
+      "additionalProperties": false,
+      "description": "Signals used directly by planners instead of parsing prose summaries.",
+      "properties": {
+        "continuity": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Continuity"
+        },
+        "duplicate_group": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Duplicate Group"
+        },
+        "editorial_role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Editorial Role"
+        },
+        "interest_score": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Interest Score"
+        },
+        "quality_score": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Quality Score"
+        },
+        "reasons": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "recommended_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "usable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Usable"
+        },
+        "warnings": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "title": "EditingSignals",
+      "type": "object"
+    },
+    "EditorialAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "evidence": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/Evidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "editorial",
+          "default": "editorial",
+          "title": "Kind",
+          "type": "string"
+        },
+        "provenance": {
+          "items": {
+            "$ref": "#/$defs/Provenance"
+          },
+          "title": "Provenance",
+          "type": "array"
+        },
+        "spatial_region": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SpatialRegion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "status": {
+          "$ref": "#/$defs/AnnotationStatus"
+        },
+        "stream_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stream Id"
+        },
+        "tags": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Tags",
+          "type": "array"
+        },
+        "time_range": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "value": {
+          "$ref": "#/$defs/EditingSignals"
+        }
+      },
+      "required": [
+        "id",
+        "time_range",
+        "status",
+        "provenance",
+        "value"
+      ],
+      "title": "EditorialAnnotation",
       "type": "object"
     },
     "Entity": {
@@ -1389,9 +1862,17 @@
           "title": "Camera Movement"
         },
         "description": {
-          "minLength": 1,
-          "title": "Description",
-          "type": "string"
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Description"
         },
         "editorial_role": {
           "anyOf": [
@@ -1453,6 +1934,19 @@
           "title": "Subjects",
           "type": "array"
         },
+        "summary": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Summary"
+        },
         "visible_text": {
           "default": [],
           "items": {
@@ -1462,9 +1956,6 @@
           "type": "array"
         }
       },
-      "required": [
-        "description"
-      ],
       "title": "SceneInfo",
       "type": "object"
     },
@@ -1555,6 +2046,76 @@
         "custom"
       ],
       "title": "SegmentKind",
+      "type": "string"
+    },
+    "SegmentRelation": {
+      "additionalProperties": false,
+      "description": "A directional or symmetric relationship between two segments.",
+      "properties": {
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "reasons": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Reasons",
+          "type": "array"
+        },
+        "source_segment_id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Source Segment Id",
+          "type": "string"
+        },
+        "target_segment_id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Target Segment Id",
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/SegmentRelationType"
+        }
+      },
+      "required": [
+        "id",
+        "type",
+        "source_segment_id",
+        "target_segment_id"
+      ],
+      "title": "SegmentRelation",
+      "type": "object"
+    },
+    "SegmentRelationType": {
+      "description": "Editing-relevant relationships between structural segments.",
+      "enum": [
+        "same_scene",
+        "continuation",
+        "duplicate",
+        "alternative",
+        "contrast",
+        "supports"
+      ],
+      "title": "SegmentRelationType",
       "type": "string"
     },
     "SpatialRegion": {
@@ -2157,7 +2718,9 @@
       "items": {
         "discriminator": {
           "mapping": {
+            "audio": "#/$defs/AudioAnnotation",
             "custom": "#/$defs/CustomAnnotation",
+            "editorial": "#/$defs/EditorialAnnotation",
             "event": "#/$defs/EventAnnotation",
             "location": "#/$defs/LocationAnnotation",
             "quality": "#/$defs/QualityAnnotation",
@@ -2187,6 +2750,12 @@
             "$ref": "#/$defs/LocationAnnotation"
           },
           {
+            "$ref": "#/$defs/AudioAnnotation"
+          },
+          {
+            "$ref": "#/$defs/EditorialAnnotation"
+          },
+          {
             "$ref": "#/$defs/CustomAnnotation"
           }
         ]
@@ -2200,6 +2769,14 @@
         "$ref": "#/$defs/Artifact"
       },
       "title": "Artifacts",
+      "type": "array"
+    },
+    "capabilities": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/CapabilityReport"
+      },
+      "title": "Capabilities",
       "type": "array"
     },
     "document_id": {
@@ -2231,9 +2808,20 @@
     "media": {
       "$ref": "#/$defs/MediaInfo"
     },
+    "relations": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SegmentRelation"
+      },
+      "title": "Relations",
+      "type": "array"
+    },
     "schema_version": {
-      "const": "0.1.0",
-      "default": "0.1.0",
+      "default": "0.2.0",
+      "enum": [
+        "0.1.0",
+        "0.2.0"
+      ],
       "title": "Schema Version",
       "type": "string"
     },

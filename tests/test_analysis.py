@@ -105,6 +105,7 @@ def test_analyze_video_generates_required_editing_information(
     assert document.segments[0].annotation_ids == ("annotation.scene.0001",)
     first_annotation = document.annotations[0]
     assert isinstance(first_annotation, SceneAnnotation)
+    assert first_annotation.value.description is not None
     assert first_annotation.value.description.endswith("zh-CN")
     assert first_annotation.value.actions == ("walking",)
     assert document.analysis_runs[0].capabilities == (

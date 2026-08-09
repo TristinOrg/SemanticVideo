@@ -9,9 +9,11 @@ from semanticvideo import (
     AnalysisRun,
     AudioStream,
     Checksum,
+    EditingSignals,
     MediaInfo,
     QualityMetrics,
     RationalTime,
+    SceneInfo,
     Segment,
     SegmentKind,
     SpatialRegion,
@@ -129,3 +131,16 @@ def test_checksum_is_sha256_hex() -> None:
     assert Checksum(value="a" * 64).algorithm == "sha256"
     with pytest.raises(ValidationError):
         Checksum(value="not-a-checksum")
+
+
+def test_scene_summary_replaces_but_accepts_legacy_description() -> None:
+    assert SceneInfo(summary="A traveler boards a train").summary is not None
+    assert SceneInfo(description="Legacy scene text").description is not None
+    with pytest.raises(ValidationError, match="summary or legacy description"):
+        SceneInfo()
+
+
+def test_editing_signals_cannot_be_empty() -> None:
+    with pytest.raises(ValidationError, match="at least one editing signal"):
+        EditingSignals()
+    assert EditingSignals(usable=True).usable is True

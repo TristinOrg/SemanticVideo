@@ -192,3 +192,59 @@ def test_unknown_artifact_and_analysis_references_are_rejected(
     ]
     with pytest.raises(ValidationError, match="analysis annotation"):
         SemanticVideoDocument.model_validate(valid_document_data)
+
+
+def test_relations_and_capabilities_are_validated(
+    valid_document_data: dict[str, Any],
+) -> None:
+    valid_document_data["segments"].append(
+        {
+            "id": "shot.2",
+            "kind": "shot",
+            "time_range": {
+                "start": {"value": 5000, "rate": 1000},
+                "duration": {"value": 5000, "rate": 1000},
+            },
+        }
+    )
+    valid_document_data["relations"] = [
+        {
+            "id": "relation.1",
+            "type": "continuation",
+            "source_segment_id": "shot.1",
+            "target_segment_id": "shot.2",
+        }
+    ]
+    valid_document_data["capabilities"] = [
+        {"name": "shots", "status": "complete", "required": True}
+    ]
+    assert SemanticVideoDocument.model_validate(valid_document_data).relations
+
+    valid_document_data["relations"][0]["target_segment_id"] = "missing"
+    with pytest.raises(ValidationError, match="relation target"):
+        SemanticVideoDocument.model_validate(valid_document_data)
+
+    valid_document_data["relations"][0]["target_segment_id"] = "shot.1"
+    with pytest.raises(ValidationError, match="cannot reference one segment twice"):
+        SemanticVideoDocument.model_validate(valid_document_data)
+
+    valid_document_data["relations"][0]["target_segment_id"] = "shot.2"
+    valid_document_data["capabilities"].append({"name": "shots", "status": "partial"})
+    with pytest.raises(ValidationError, match="capability IDs must be unique"):
+        SemanticVideoDocument.model_validate(valid_document_data)
+
+
+def test_editorial_recommended_range_must_stay_inside_annotation(
+    valid_document_data: dict[str, Any],
+) -> None:
+    annotation = valid_document_data["annotations"][0]
+    annotation["kind"] = "editorial"
+    annotation["value"] = {
+        "usable": True,
+        "recommended_range": {
+            "start": {"value": 4000, "rate": 1000},
+            "duration": {"value": 2000, "rate": 1000},
+        },
+    }
+    with pytest.raises(ValidationError, match="recommended range"):
+        SemanticVideoDocument.model_validate(valid_document_data)

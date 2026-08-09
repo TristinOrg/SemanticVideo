@@ -3,7 +3,12 @@
 from semanticvideo.schema.annotation import (
     Annotation,
     AnnotationStatus,
+    AudioAnnotation,
+    AudioContentType,
+    AudioInfo,
     CustomAnnotation,
+    EditingSignals,
+    EditorialAnnotation,
     EventAnnotation,
     EventInfo,
     GeoPoint,
@@ -20,7 +25,15 @@ from semanticvideo.schema.annotation import (
     SubjectAnnotation,
     SubjectInfo,
 )
-from semanticvideo.schema.document import AnalysisRun, Artifact, SemanticVideoDocument
+from semanticvideo.schema.document import (
+    AnalysisRun,
+    Artifact,
+    CapabilityReport,
+    CapabilityStatus,
+    SegmentRelation,
+    SegmentRelationType,
+    SemanticVideoDocument,
+)
 from semanticvideo.schema.entity import Entity, EntityType
 from semanticvideo.schema.media import (
     AudioStream,
@@ -44,9 +57,16 @@ __all__ = [
     "Annotation",
     "AnnotationStatus",
     "Artifact",
+    "AudioAnnotation",
+    "AudioContentType",
+    "AudioInfo",
     "AudioStream",
+    "CapabilityReport",
+    "CapabilityStatus",
     "Checksum",
     "CustomAnnotation",
+    "EditingSignals",
+    "EditorialAnnotation",
     "Entity",
     "EntityType",
     "EventAnnotation",
@@ -67,6 +87,8 @@ __all__ = [
     "SceneInfo",
     "Segment",
     "SegmentKind",
+    "SegmentRelation",
+    "SegmentRelationType",
     "SemanticVideoDocument",
     "SpatialRegion",
     "SpeechAnnotation",

@@ -1,6 +1,7 @@
 """SemanticVideo document aggregate and integrity validation."""
 
 from datetime import datetime
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import Field, JsonValue, model_validator
@@ -8,6 +9,7 @@ from pydantic import Field, JsonValue, model_validator
 from semanticvideo.schema._base import SemanticModel
 from semanticvideo.schema.annotation import (
     Annotation,
+    EditorialAnnotation,
     EventAnnotation,
     LocationAnnotation,
     SpeechAnnotation,
@@ -49,10 +51,51 @@ class AnalysisRun(SemanticModel):
         return self
 
 
+class CapabilityStatus(StrEnum):
+    """Whether an analysis capability produced usable information."""
+
+    COMPLETE = "complete"
+    PARTIAL = "partial"
+    OMITTED = "omitted"
+    FAILED = "failed"
+
+
+class CapabilityReport(SemanticModel):
+    """Explicitly distinguish absent, failed, and intentionally omitted data."""
+
+    name: str = Field(min_length=1)
+    status: CapabilityStatus
+    required: bool = False
+    provider: str | None = None
+    message: str | None = None
+
+
+class SegmentRelationType(StrEnum):
+    """Editing-relevant relationships between structural segments."""
+
+    SAME_SCENE = "same_scene"
+    CONTINUATION = "continuation"
+    DUPLICATE = "duplicate"
+    ALTERNATIVE = "alternative"
+    CONTRAST = "contrast"
+    SUPPORTS = "supports"
+
+
+class SegmentRelation(SemanticModel):
+    """A directional or symmetric relationship between two segments."""
+
+    id: Identifier
+    type: SegmentRelationType
+    source_segment_id: Identifier
+    target_segment_id: Identifier
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    reasons: tuple[str, ...] = ()
+
+
 class SemanticVideoDocument(SemanticModel):
     """Root object for one source media asset's semantic sidecar."""
 
-    schema_version: Literal["0.1.0"] = "0.1.0"
+    schema_version: Literal["0.1.0", "0.2.0"] = "0.2.0"
     document_id: Identifier
     generated_at: datetime
     media: MediaInfo
@@ -61,6 +104,8 @@ class SemanticVideoDocument(SemanticModel):
     annotations: tuple[Annotation, ...] = ()
     artifacts: tuple[Artifact, ...] = ()
     analysis_runs: tuple[AnalysisRun, ...] = ()
+    capabilities: tuple[CapabilityReport, ...] = ()
+    relations: tuple[SegmentRelation, ...] = ()
     extensions: dict[str, JsonValue] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -73,6 +118,10 @@ class SemanticVideoDocument(SemanticModel):
         self._require_unique_ids("artifact", [item.id for item in self.artifacts])
         self._require_unique_ids(
             "analysis run", [item.id for item in self.analysis_runs]
+        )
+        self._require_unique_ids("relation", [item.id for item in self.relations])
+        self._require_unique_ids(
+            "capability", [item.name for item in self.capabilities]
         )
 
         entity_ids = {item.id for item in self.entities}
@@ -134,12 +183,31 @@ class SemanticVideoDocument(SemanticModel):
                         raise ValueError(
                             "speech word range must be inside its utterance range"
                         )
+            elif isinstance(annotation, EditorialAnnotation):
+                recommended = annotation.value.recommended_range
+                if recommended is not None and not (
+                    annotation.time_range.start_fraction <= recommended.start_fraction
+                    and recommended.end_fraction <= annotation.time_range.end_fraction
+                ):
+                    raise ValueError(
+                        "editorial recommended range must be inside annotation range"
+                    )
 
         for run in self.analysis_runs:
             for annotation_id in run.annotation_ids:
                 self._require_reference(
                     "analysis annotation", annotation_id, annotation_ids
                 )
+
+        for relation in self.relations:
+            self._require_reference(
+                "relation source", relation.source_segment_id, segment_ids
+            )
+            self._require_reference(
+                "relation target", relation.target_segment_id, segment_ids
+            )
+            if relation.source_segment_id == relation.target_segment_id:
+                raise ValueError("segment relation cannot reference one segment twice")
 
         return self
 

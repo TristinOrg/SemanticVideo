@@ -40,7 +40,9 @@ class SpatialRegion(SemanticModel):
 class SceneInfo(SemanticModel):
     """Perceptual and editorial description of a visual scene."""
 
-    description: str = Field(min_length=1)
+    summary: str | None = Field(default=None, min_length=1)
+    # Compatibility only. New writers use ``summary`` and structured fields.
+    description: str | None = Field(default=None, min_length=1)
     environment: tuple[str, ...] = ()
     subjects: tuple[str, ...] = ()
     actions: tuple[str, ...] = ()
@@ -50,6 +52,14 @@ class SceneInfo(SemanticModel):
     shot_type: str | None = None
     camera_movement: str | None = None
     editorial_role: str | None = None
+
+    @model_validator(mode="after")
+    def require_human_readable_summary(self) -> "SceneInfo":
+        """Keep old manifests valid while making ``summary`` the preferred field."""
+
+        if self.summary is None and self.description is None:
+            raise ValueError("scene info requires summary or legacy description")
+        return self
 
 
 class QualityMetrics(SemanticModel):
@@ -122,6 +132,53 @@ class LocationInfo(SemanticModel):
     point: GeoPoint | None = None
 
 
+class AudioContentType(StrEnum):
+    """Editing-relevant classes of audible content."""
+
+    SPEECH = "speech"
+    MUSIC = "music"
+    AMBIENCE = "ambience"
+    SOUND_EFFECT = "sound_effect"
+    SILENCE = "silence"
+    NOISE = "noise"
+    MIXED = "mixed"
+
+
+class AudioInfo(SemanticModel):
+    """Non-transcript audio observations for an interval."""
+
+    type: AudioContentType
+    summary: str | None = Field(default=None, min_length=1)
+    sound_events: tuple[str, ...] = ()
+    music_mood: tuple[str, ...] = ()
+    language_hint: str | None = None
+    speech_probability: float | None = Field(default=None, ge=0, le=1)
+    loudness_lufs: float | None = None
+    tempo_bpm: float | None = Field(default=None, gt=0)
+
+
+class EditingSignals(SemanticModel):
+    """Signals used directly by planners instead of parsing prose summaries."""
+
+    quality_score: float | None = Field(default=None, ge=0, le=1)
+    interest_score: float | None = Field(default=None, ge=0, le=1)
+    usable: bool | None = None
+    recommended_range: TimeRange | None = None
+    editorial_role: str | None = None
+    duplicate_group: str | None = None
+    continuity: str | None = None
+    reasons: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def require_editing_signal(self) -> "EditingSignals":
+        """Reject an annotation that carries no actionable editing information."""
+
+        if not self.model_dump(exclude_none=True, exclude_defaults=True):
+            raise ValueError("at least one editing signal is required")
+        return self
+
+
 class AnnotationBase(SemanticModel):
     """Fields common to every semantic claim."""
 
@@ -174,6 +231,16 @@ class LocationAnnotation(AnnotationBase):
     value: LocationInfo
 
 
+class AudioAnnotation(AnnotationBase):
+    kind: Literal["audio"] = "audio"
+    value: AudioInfo
+
+
+class EditorialAnnotation(AnnotationBase):
+    kind: Literal["editorial"] = "editorial"
+    value: EditingSignals
+
+
 class CustomAnnotation(AnnotationBase):
     """Namespaced extension point for experimental annotation types."""
 
@@ -193,6 +260,8 @@ Annotation = Annotated[
     | SubjectAnnotation
     | SpeechAnnotation
     | LocationAnnotation
+    | AudioAnnotation
+    | EditorialAnnotation
     | CustomAnnotation,
     Field(discriminator="kind"),
 ]

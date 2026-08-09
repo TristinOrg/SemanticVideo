@@ -18,3 +18,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   representative frames, structured shot content, and traceable provenance.
 - Optional OpenAI vision and reviewed JSON description providers.
 - Opt-in technical, embedded metadata, SHA-256, and raw FFprobe information.
+- Schema 0.2 compatibility foundation for scene summaries, audio observations,
+  actionable editing signals, explicit capability states, and segment relations.

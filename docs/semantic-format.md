@@ -74,6 +74,25 @@ Core kinds in v0.1 are `scene`, `quality`, `event`, `subject`, `speech`, and
 `location`. A `custom` kind provides namespaced experimentation without adding
 unvalidated fields to core objects.
 
+Schema 0.2 adds `audio` observations and `editorial` signals. Scene prose moves
+to the optional `summary` field; the older `description` field remains readable
+for compatibility, but planners should consume structured subjects, actions,
+objects, environment, shot type, and editorial annotations instead of parsing prose.
+
+Editorial annotations may record quality and interest scores, usability, a
+recommended source range, duplicate group, continuity notes, reasons, and warnings.
+Recommended ranges must remain inside the annotation range.
+
+## Capability state and segment relations
+
+The root `capabilities` collection says whether each analyzer completed, produced
+partial data, was intentionally omitted, or failed. This prevents missing data from
+being mistaken for a negative observation.
+
+The root `relations` collection connects segments as same-scene, continuation,
+duplicate, alternative, contrast, or supporting material. Both referenced segment
+IDs must resolve and a relation cannot point from a segment to itself.
+
 An annotation expresses one claim. If two models disagree about a location,
 store two annotations with independent confidence and provenance rather than
 merging away the disagreement.
@@ -114,4 +133,3 @@ A valid document must satisfy at least these rules:
 
 See [`examples/japan-trip/GX010231.semantic.json`](../examples/japan-trip/GX010231.semantic.json)
 for a complete example.
-
