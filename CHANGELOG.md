@@ -12,4 +12,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Repository foundation, documentation, tests, and continuous integration.
 - Initial provider-neutral SemanticVideo schema and JSON Schema export.
 - Example Japan trip semantic manifest.
-
+- Deterministic `ffprobe` media inspection and `semanticvideo inspect` CLI.
+- Fixture-driven parser coverage and a synthetic video integration test.

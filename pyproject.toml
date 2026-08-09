@@ -33,6 +33,7 @@ Issues = "https://github.com/TristinOrg/SemanticVideo/issues"
 Repository = "https://github.com/TristinOrg/SemanticVideo.git"
 
 [project.scripts]
+semanticvideo = "semanticvideo.cli.main:main"
 semanticvideo-schema = "semanticvideo.schema.export:main"
 
 [dependency-groups]
@@ -49,6 +50,9 @@ packages = ["src/semanticvideo"]
 [tool.pytest.ini_options]
 addopts = "--strict-config --strict-markers --cov=semanticvideo --cov-report=term-missing --cov-fail-under=90"
 testpaths = ["tests"]
+markers = [
+  "integration: requires ffmpeg and ffprobe executables",
+]
 
 [tool.ruff]
 line-length = 88

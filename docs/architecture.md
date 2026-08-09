@@ -30,6 +30,20 @@ Replaceable analyzers ---> SemanticVideo manifest
 
 None of these representations substitutes for the others.
 
+## Media inspection boundary
+
+Milestone 2 separates three responsibilities:
+
+1. `run_ffprobe` invokes a configured executable with a fixed argument list,
+   no shell, a timeout, and captured diagnostics.
+2. `parse_ffprobe_json` is a deterministic pure parser that can be tested from
+   checked-in fixtures without an FFmpeg installation.
+3. `inspect_media` validates the local path, combines filesystem identity with
+   parsed metadata, and returns a core `MediaInfo` model.
+
+The command-line interface only formats this validated model. It does not
+duplicate media parsing rules.
+
 ## Core document
 
 `SemanticVideoDocument` is the aggregate consistency boundary for one source
@@ -72,4 +86,3 @@ artifact references instead of bloating human-readable JSON.
 
 Breaking core changes require a schema version change, fixtures, migration
 notes, and an ADR. Provider-specific fields do not belong in core models.
-
