@@ -29,3 +29,28 @@ class FFprobeExecutionError(MediaInspectionError):
 
 class FFprobeParseError(MediaInspectionError):
     """ffprobe output was invalid or lacked required media information."""
+
+
+class VideoAnalysisError(SemanticVideoError):
+    """Base class for shot detection and visual-description failures."""
+
+
+class FFmpegNotFoundError(VideoAnalysisError):
+    """The configured ffmpeg executable could not be started."""
+
+
+class FFmpegExecutionError(VideoAnalysisError):
+    """ffmpeg ran but returned an unsuccessful exit code."""
+
+    def __init__(self, operation: str, returncode: int, stderr: str) -> None:
+        detail = stderr.strip() or "ffmpeg returned no diagnostic output"
+        super().__init__(
+            f"ffmpeg {operation} failed with exit code {returncode}: {detail}"
+        )
+        self.operation = operation
+        self.returncode = returncode
+        self.stderr = stderr
+
+
+class DescriptionProviderError(VideoAnalysisError):
+    """A configured visual-description provider could not return valid content."""

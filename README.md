@@ -44,7 +44,8 @@ came from.
 
 ## Current scope
 
-Milestones 0 through 2 establish the schema foundation and technical inspection:
+Milestones 0 through 3 establish the schema foundation and the first complete
+video-understanding path:
 
 - Pydantic models for media, streams, exact time, segments, annotations,
   entities, evidence, and provenance
@@ -53,10 +54,14 @@ Milestones 0 through 2 establish the schema foundation and technical inspection:
 - an example `.semantic.json` manifest
 - deterministic `ffprobe` inspection for real video files
 - a scriptable `semanticvideo inspect` command with JSON output
+- FFmpeg scene-change detection and representative-frame extraction
+- provider-neutral shot descriptions with an OpenAI adapter and reviewed JSON import
+- one editing-oriented `.semantic.json` containing media, shots, descriptions,
+  provenance, and analysis parameters
 - tests, linting, typing, CI, documentation, and architectural decisions
 
-Shot detection, semantic AI providers, search, EditPlan, OpenTimelineIO, and
-FFmpeg rendering are intentionally scheduled for later milestones.
+Search, EditPlan, OpenTimelineIO, and FFmpeg editing/rendering are scheduled for
+later milestones.
 
 ## Quick start
 
@@ -82,6 +87,33 @@ The command reports source identity, exact duration, container, bitrate, video/a
 subtitle streams, codecs, dimensions, frame rate, time base, rotation, color
 metadata, audio layout, language, timestamps, and filesystem facts as JSON.
 
+Generate the required editing information in one file:
+
+```bash
+uv sync --extra openai
+set OPENAI_API_KEY=your_key
+uv run semanticvideo analyze GX010231.MP4 --language zh-CN
+```
+
+The default `GX010231.semantic.json` always contains core media facts, contiguous
+shot ranges, one representative time per shot, and a structured scene description.
+The command fails instead of silently writing an incomplete manifest if description
+generation is unavailable.
+
+Optional information is opt-in and remains in that same JSON:
+
+```bash
+uv run semanticvideo analyze GX010231.MP4 --include technical --include metadata
+uv run semanticvideo analyze GX010231.MP4 --include checksum --include raw
+```
+
+Descriptions produced elsewhere or reviewed by a person can be imported from an
+object keyed by shot ID:
+
+```bash
+uv run semanticvideo analyze GX010231.MP4 --descriptions descriptions.json
+```
+
 Load and validate a manifest:
 
 ```python
@@ -95,7 +127,7 @@ document = SemanticVideoDocument.model_validate_json(
 print(document.media.duration.seconds)
 ```
 
-See [media inspection](docs/media-inspection.md),
+See [video analysis](docs/video-analysis.md), [media inspection](docs/media-inspection.md),
 [the semantic format](docs/semantic-format.md), [architecture](docs/architecture.md),
 and [roadmap](ROADMAP.md) for details.
 

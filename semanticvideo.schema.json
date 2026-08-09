@@ -1368,6 +1368,14 @@
       "additionalProperties": false,
       "description": "Perceptual and editorial description of a visual scene.",
       "properties": {
+        "actions": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Actions",
+          "type": "array"
+        },
         "camera_movement": {
           "anyOf": [
             {
@@ -1405,6 +1413,26 @@
           "title": "Environment",
           "type": "array"
         },
+        "location_hint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Location Hint"
+        },
+        "objects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Objects",
+          "type": "array"
+        },
         "shot_type": {
           "anyOf": [
             {
@@ -1416,6 +1444,22 @@
           ],
           "default": null,
           "title": "Shot Type"
+        },
+        "subjects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Subjects",
+          "type": "array"
+        },
+        "visible_text": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Visible Text",
+          "type": "array"
         }
       },
       "required": [
