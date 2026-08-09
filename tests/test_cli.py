@@ -10,9 +10,13 @@ import pytest
 from semanticvideo.cli.main import build_parser, main
 from semanticvideo.errors import MediaNotFoundError
 from semanticvideo.schema import (
+    EditClip,
+    EditPlan,
     MediaInfo,
     RationalTime,
+    Segment,
     SemanticVideoDocument,
+    TimeRange,
     VideoStream,
 )
 
@@ -31,6 +35,19 @@ def media_info() -> MediaInfo:
                 height=1080,
             ),
         ),
+    )
+
+
+def plannable_document() -> SemanticVideoDocument:
+    time_range = TimeRange(
+        start=RationalTime(value=0, rate=1),
+        duration=RationalTime(value=3, rate=1),
+    )
+    return SemanticVideoDocument(
+        document_id="document.test",
+        generated_at=datetime.now(UTC),
+        media=media_info(),
+        segments=(Segment(id="shot.1", kind="shot", time_range=time_range),),
     )
 
 
@@ -180,3 +197,60 @@ def test_prepare_agent_reports_task_directory(
 def test_agent_provider_requires_response(capsys: pytest.CaptureFixture[str]) -> None:
     assert main(["analyze", "clip.mp4", "--provider", "agent"]) == 1
     assert "requires --agent-response" in capsys.readouterr().err
+
+
+def test_plan_updates_manifest_atomically(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    manifest = tmp_path / "clip.semantic.json"
+    manifest.write_text(plannable_document().model_dump_json(), encoding="utf-8")
+
+    assert main(["plan", str(manifest), "--target-duration", "2"]) == 0
+    restored = SemanticVideoDocument.model_validate_json(
+        manifest.read_text(encoding="utf-8")
+    )
+    assert restored.edit_plans[0].duration_seconds == 2
+    assert "with 1 clips (2.000s)" in capsys.readouterr().out
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_render_uses_latest_plan(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    document = plannable_document()
+    segment = document.segments[0]
+    plan = EditPlan(
+        id="edit.plan.0001",
+        name="test",
+        generated_at=datetime.now(UTC),
+        strategy="test",
+        clips=(
+            EditClip(
+                id="edit.clip.0001",
+                source_segment_id=segment.id,
+                source_range=segment.time_range,
+                order=0,
+            ),
+        ),
+    )
+    document = document.model_copy(update={"edit_plans": (plan,)})
+    manifest = tmp_path / "clip.semantic.json"
+    manifest.write_text(document.model_dump_json(), encoding="utf-8")
+    output = tmp_path / "cut.mp4"
+    observed: dict[str, object] = {}
+
+    def render(
+        _document: SemanticVideoDocument,
+        selected: EditPlan,
+        path: Path,
+        **options: object,
+    ) -> Path:
+        observed.update(plan=selected, path=path, options=options)
+        return path
+
+    monkeypatch.setattr("semanticvideo.cli.main.render_edit_plan", render)
+
+    assert main(["render", str(manifest), "-o", str(output)]) == 0
+    assert observed["plan"] == plan
+    assert observed["path"] == output
+    assert capsys.readouterr().out == f"Rendered {plan.id} to {output}\n"

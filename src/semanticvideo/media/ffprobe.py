@@ -98,7 +98,7 @@ def inspect_media(
     stat = media_path.stat()
     return parse_ffprobe_json(
         payload,
-        uri=str(media_path),
+        uri=str(media_path.resolve()),
         asset_id=_asset_id(media_path),
         file_size=stat.st_size,
         modified_at=datetime.fromtimestamp(stat.st_mtime, tz=UTC),

@@ -34,6 +34,7 @@ from semanticvideo.schema.document import (
     SegmentRelationType,
     SemanticVideoDocument,
 )
+from semanticvideo.schema.edit import EditClip, EditPlan
 from semanticvideo.schema.entity import Entity, EntityType
 from semanticvideo.schema.media import (
     AudioStream,
@@ -65,6 +66,8 @@ __all__ = [
     "CapabilityStatus",
     "Checksum",
     "CustomAnnotation",
+    "EditClip",
+    "EditPlan",
     "EditingSignals",
     "EditorialAnnotation",
     "Entity",

@@ -15,6 +15,7 @@ from semanticvideo.schema.annotation import (
     SpeechAnnotation,
     SubjectAnnotation,
 )
+from semanticvideo.schema.edit import EditPlan
 from semanticvideo.schema.entity import Entity
 from semanticvideo.schema.media import Identifier, MediaInfo
 from semanticvideo.schema.segment import Segment
@@ -104,6 +105,7 @@ class SemanticVideoDocument(SemanticModel):
     annotations: tuple[Annotation, ...] = ()
     artifacts: tuple[Artifact, ...] = ()
     analysis_runs: tuple[AnalysisRun, ...] = ()
+    edit_plans: tuple[EditPlan, ...] = ()
     capabilities: tuple[CapabilityReport, ...] = ()
     relations: tuple[SegmentRelation, ...] = ()
     extensions: dict[str, JsonValue] = Field(default_factory=dict)
@@ -119,6 +121,7 @@ class SemanticVideoDocument(SemanticModel):
         self._require_unique_ids(
             "analysis run", [item.id for item in self.analysis_runs]
         )
+        self._require_unique_ids("edit plan", [item.id for item in self.edit_plans])
         self._require_unique_ids("relation", [item.id for item in self.relations])
         self._require_unique_ids(
             "capability", [item.name for item in self.capabilities]
@@ -208,6 +211,24 @@ class SemanticVideoDocument(SemanticModel):
             )
             if relation.source_segment_id == relation.target_segment_id:
                 raise ValueError("segment relation cannot reference one segment twice")
+
+        for plan in self.edit_plans:
+            for clip in plan.clips:
+                self._require_reference(
+                    "edit clip segment", clip.source_segment_id, segment_ids
+                )
+                source_segment = next(
+                    item for item in self.segments if item.id == clip.source_segment_id
+                )
+                if not (
+                    source_segment.time_range.start_fraction
+                    <= clip.source_range.start_fraction
+                    and clip.source_range.end_fraction
+                    <= source_segment.time_range.end_fraction
+                ):
+                    raise ValueError(
+                        "edit clip source range must be inside its source segment"
+                    )
 
         return self
 

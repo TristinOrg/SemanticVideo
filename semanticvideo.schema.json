@@ -658,6 +658,125 @@
       "title": "CustomAnnotation",
       "type": "object"
     },
+    "EditClip": {
+      "additionalProperties": false,
+      "description": "One source interval placed in timeline order.",
+      "properties": {
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "order": {
+          "minimum": 0,
+          "title": "Order",
+          "type": "integer"
+        },
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "source_range": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "source_segment_id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Source Segment Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source_segment_id",
+        "source_range",
+        "order"
+      ],
+      "title": "EditClip",
+      "type": "object"
+    },
+    "EditPlan": {
+      "additionalProperties": false,
+      "description": "A deterministic list of source clips stored in the semantic manifest.",
+      "properties": {
+        "clips": {
+          "items": {
+            "$ref": "#/$defs/EditClip"
+          },
+          "title": "Clips",
+          "type": "array"
+        },
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Parameters",
+          "type": "object"
+        },
+        "strategy": {
+          "minLength": 1,
+          "title": "Strategy",
+          "type": "string"
+        },
+        "target_duration": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RationalTime"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "generated_at",
+        "strategy",
+        "clips"
+      ],
+      "title": "EditPlan",
+      "type": "object"
+    },
     "EditingSignals": {
       "additionalProperties": false,
       "description": "Signals used directly by planners instead of parsing prose summaries.",
@@ -2808,6 +2927,14 @@
       "pattern": "^[A-Za-z0-9_.:-]+$",
       "title": "Document Id",
       "type": "string"
+    },
+    "edit_plans": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/EditPlan"
+      },
+      "title": "Edit Plans",
+      "type": "array"
     },
     "entities": {
       "default": [],

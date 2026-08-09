@@ -4,14 +4,21 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from semanticvideo import __version__
+from semanticvideo import SemanticVideoDocument, __version__
 from semanticvideo.analysis import analyze_video
 from semanticvideo.analysis.agent_task import prepare_agent_task
 from semanticvideo.analysis.pipeline import INCLUDE_CHOICES
+from semanticvideo.editing import (
+    add_edit_plan,
+    create_edit_plan,
+    find_edit_plan,
+    render_edit_plan,
+)
 from semanticvideo.errors import SemanticVideoError
 from semanticvideo.media import inspect_media
 from semanticvideo.providers import (
@@ -180,6 +187,48 @@ def build_parser() -> argparse.ArgumentParser:
     prepare_parser.add_argument("--ffmpeg", default="ffmpeg")
     prepare_parser.add_argument("--ffprobe", default="ffprobe")
     prepare_parser.add_argument("--timeout", type=_positive_float, default=300.0)
+
+    plan_parser = commands.add_parser(
+        "plan",
+        help="Create an explainable rough-cut plan from editing signals.",
+    )
+    plan_parser.add_argument("manifest", type=Path, help="SemanticVideo JSON file.")
+    plan_parser.add_argument(
+        "-o",
+        "--output",
+        type=Path,
+        help="Output manifest (default: update MANIFEST atomically).",
+    )
+    plan_parser.add_argument(
+        "--target-duration",
+        type=_positive_float,
+        metavar="SECONDS",
+        help="Maximum rough-cut duration.",
+    )
+    plan_parser.add_argument(
+        "--minimum-clip-duration",
+        type=_positive_float,
+        default=0.5,
+        metavar="SECONDS",
+    )
+    plan_parser.add_argument(
+        "--ranked-order",
+        action="store_true",
+        help="Keep interest ranking instead of restoring source order.",
+    )
+    plan_parser.add_argument("--name", default="Automatic rough cut")
+
+    render_parser = commands.add_parser(
+        "render", help="Render an edit plan to MP4 with FFmpeg."
+    )
+    render_parser.add_argument("manifest", type=Path, help="SemanticVideo JSON file.")
+    render_parser.add_argument("-o", "--output", type=Path, required=True)
+    render_parser.add_argument("--plan-id", help="Plan ID (default: latest).")
+    render_parser.add_argument("--ffmpeg", default="ffmpeg")
+    render_parser.add_argument(
+        "--timeout", type=_positive_float, default=3600.0, metavar="SECONDS"
+    )
+    render_parser.add_argument("--overwrite", action="store_true")
     return parser
 
 
@@ -250,10 +299,64 @@ def main(argv: Sequence[str] | None = None) -> int:
                 f"Wrote agent task with {len(bundle.shots)} shots to {output}\n"
             )
             return 0
+        if args.command == "plan":
+            document = _read_document(args.manifest)
+            plan = create_edit_plan(
+                document,
+                target_duration_seconds=args.target_duration,
+                minimum_clip_seconds=args.minimum_clip_duration,
+                preserve_source_order=not args.ranked_order,
+                name=args.name,
+            )
+            updated = add_edit_plan(document, plan)
+            output = args.output or args.manifest
+            _write_document_atomic(updated, output)
+            sys.stdout.write(
+                f"Wrote {plan.id} with {len(plan.clips)} clips "
+                f"({plan.duration_seconds:.3f}s) to {output}\n"
+            )
+            return 0
+        if args.command == "render":
+            document = _read_document(args.manifest)
+            plan = find_edit_plan(document, args.plan_id)
+            rendered_output = render_edit_plan(
+                document,
+                plan,
+                args.output,
+                executable=args.ffmpeg,
+                timeout_seconds=args.timeout,
+                overwrite=args.overwrite,
+            )
+            sys.stdout.write(f"Rendered {plan.id} to {rendered_output}\n")
+            return 0
     except (SemanticVideoError, OSError) as error:
         sys.stderr.write(f"error: {error}\n")
         return 1
     return 2
+
+
+def _read_document(path: Path) -> SemanticVideoDocument:
+    return SemanticVideoDocument.model_validate_json(path.read_text(encoding="utf-8"))
+
+
+def _write_document_atomic(document: SemanticVideoDocument, output: Path) -> None:
+    output.parent.mkdir(parents=True, exist_ok=True)
+    rendered = document.model_dump_json(indent=2, exclude_none=True)
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        prefix=f".{output.name}.",
+        suffix=".tmp",
+        dir=output.parent,
+        delete=False,
+    ) as handle:
+        temporary = Path(handle.name)
+        handle.write(f"{rendered}\n")
+    try:
+        temporary.replace(output)
+    except OSError:
+        temporary.unlink(missing_ok=True)
+        raise
 
 
 def _positive_float(value: str) -> float:

@@ -25,3 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - API-key-free agent task bundles and validated multimodal response import.
 - Optional OpenAI `whisper-1` word/segment timestamp transcription with speech
   annotations merged into the single semantic manifest.
+- Validated `EditPlan` and `EditClip` contracts with exact source ranges and document
+  reference checks.
+- Automatic rough-cut planning using usability, quality, interest, recommended
+  ranges, and duplicate groups.
+- Safe, atomic FFmpeg H.264/AAC rendering through the `plan` and `render` CLI
+  commands.

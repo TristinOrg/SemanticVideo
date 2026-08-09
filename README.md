@@ -44,8 +44,8 @@ came from.
 
 ## Current scope
 
-Milestones 0 through 3 establish the schema foundation and the first complete
-video-understanding path:
+Milestones 0 through 4 establish the schema foundation and the first complete
+analysis-to-rough-cut path:
 
 - Pydantic models for media, streams, exact time, segments, annotations,
   entities, evidence, and provenance
@@ -60,10 +60,11 @@ video-understanding path:
   signals that do not require an AI service
 - one editing-oriented `.semantic.json` containing media, shots, descriptions,
   provenance, and analysis parameters
+- validated, explainable `EditPlan` objects generated from structured editing signals
+- deterministic FFmpeg trim-and-concatenate rendering with atomic output handling
 - tests, linting, typing, CI, documentation, and architectural decisions
 
-Search, EditPlan, OpenTimelineIO, and FFmpeg editing/rendering are scheduled for
-later milestones.
+Search and OpenTimelineIO interchange remain later milestones.
 
 ## Quick start
 
@@ -112,6 +113,13 @@ editing fitness, audio levels, and segment relations.
 The command fails instead of silently writing an incomplete manifest if description
 generation is unavailable.
 
+Turn the analysis into a reviewable rough cut:
+
+```bash
+uv run semanticvideo plan GX010231.semantic.json --target-duration 60
+uv run semanticvideo render GX010231.semantic.json --output GX010231.roughcut.mp4
+```
+
 Optional information is opt-in and remains in that same JSON:
 
 ```bash
@@ -139,7 +147,9 @@ document = SemanticVideoDocument.model_validate_json(
 print(document.media.duration.seconds)
 ```
 
-See [agent workflow](docs/agent-workflow.md), [video analysis](docs/video-analysis.md),
+See [agent workflow](docs/agent-workflow.md),
+[editing and rendering](docs/editing-and-rendering.md),
+[video analysis](docs/video-analysis.md),
 [media inspection](docs/media-inspection.md),
 [the semantic format](docs/semantic-format.md), [architecture](docs/architecture.md),
 and [roadmap](ROADMAP.md) for details.

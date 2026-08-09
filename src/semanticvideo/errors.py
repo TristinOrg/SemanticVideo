@@ -62,3 +62,11 @@ class TranscriptionProviderError(VideoAnalysisError):
 
 class AgentTaskError(VideoAnalysisError):
     """An agent task bundle or response could not be prepared or validated."""
+
+
+class EditPlanningError(SemanticVideoError):
+    """No valid edit plan could be produced from the requested constraints."""
+
+
+class RenderError(SemanticVideoError):
+    """A validated edit plan could not be rendered by FFmpeg."""
