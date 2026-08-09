@@ -14,3 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Example Japan trip semantic manifest.
 - Deterministic `ffprobe` media inspection and `semanticvideo inspect` CLI.
 - Fixture-driven parser coverage and a synthetic video integration test.
+- Single-file `semanticvideo analyze` pipeline with FFmpeg shot detection,
+  representative frames, structured shot content, and traceable provenance.
+- Optional OpenAI vision and reviewed JSON description providers.
+- Opt-in technical, embedded metadata, SHA-256, and raw FFprobe information.

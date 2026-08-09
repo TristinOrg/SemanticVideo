@@ -42,6 +42,11 @@ class SceneInfo(SemanticModel):
 
     description: str = Field(min_length=1)
     environment: tuple[str, ...] = ()
+    subjects: tuple[str, ...] = ()
+    actions: tuple[str, ...] = ()
+    objects: tuple[str, ...] = ()
+    visible_text: tuple[str, ...] = ()
+    location_hint: str | None = None
     shot_type: str | None = None
     camera_movement: str | None = None
     editorial_role: str | None = None
