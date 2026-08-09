@@ -8,7 +8,8 @@ of source ranges; it is reviewable JSON and can be rendered deterministically.
 
 ```powershell
 uv run semanticvideo plan input.semantic.json `
-  --target-duration 60
+  --target-duration 60 `
+  --maximum-clip-duration 8
 ```
 
 The planner uses structured `editorial` annotations rather than parsing scene prose.
@@ -16,6 +17,8 @@ It removes shots marked unusable, applies recommended in/out ranges, keeps the
 highest-scoring member of each duplicate group, ranks by interest and quality, and
 then restores source order. The optional target duration trims only the final
 selected clip needed to meet the limit.
+`--maximum-clip-duration` caps long source ranges so a short target can include more
+than one shot and produce a better-paced assembly.
 
 By default the command atomically updates the input manifest. Use `--output` to keep
 the analyzed manifest unchanged, or `--ranked-order` to keep score order instead of

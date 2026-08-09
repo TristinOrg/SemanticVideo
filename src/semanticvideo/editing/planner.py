@@ -32,6 +32,7 @@ def create_edit_plan(
     *,
     target_duration_seconds: float | None = None,
     minimum_clip_seconds: float = 0.5,
+    maximum_clip_seconds: float | None = None,
     preserve_source_order: bool = True,
     name: str = "Automatic rough cut",
 ) -> EditPlan:
@@ -41,8 +42,12 @@ def create_edit_plan(
         raise ValueError("target duration must be greater than zero")
     if minimum_clip_seconds <= 0:
         raise ValueError("minimum clip duration must be greater than zero")
+    if maximum_clip_seconds is not None and maximum_clip_seconds <= 0:
+        raise ValueError("maximum clip duration must be greater than zero")
+    if maximum_clip_seconds is not None and maximum_clip_seconds < minimum_clip_seconds:
+        raise ValueError("maximum clip duration cannot be shorter than the minimum")
 
-    candidates = _candidates(document)
+    candidates = _candidates(document, maximum_clip_seconds=maximum_clip_seconds)
     if not candidates:
         raise EditPlanningError("manifest contains no usable shot candidates")
     deduplicated = _best_per_duplicate_group(candidates)
@@ -82,6 +87,7 @@ def create_edit_plan(
         clips=clips,
         parameters={
             "minimum_clip_seconds": minimum_clip_seconds,
+            "maximum_clip_seconds": maximum_clip_seconds,
             "preserve_source_order": preserve_source_order,
         },
     )
@@ -100,7 +106,9 @@ def add_edit_plan(
     return SemanticVideoDocument.model_validate(data)
 
 
-def _candidates(document: SemanticVideoDocument) -> list[_Candidate]:
+def _candidates(
+    document: SemanticVideoDocument, *, maximum_clip_seconds: float | None
+) -> list[_Candidate]:
     annotations = {annotation.id: annotation for annotation in document.annotations}
     candidates: list[_Candidate] = []
     for segment in document.segments:
@@ -124,6 +132,16 @@ def _candidates(document: SemanticVideoDocument) -> list[_Candidate]:
             if editorial is not None and editorial.value.recommended_range is not None
             else segment.time_range
         )
+        capped = False
+        if (
+            maximum_clip_seconds is not None
+            and source_range.duration_fraction > Fraction(str(maximum_clip_seconds))
+        ):
+            source_range = TimeRange(
+                start=source_range.start,
+                duration=_time(Fraction(str(maximum_clip_seconds))),
+            )
+            capped = True
         interest = (
             editorial.value.interest_score
             if editorial is not None and editorial.value.interest_score is not None
@@ -144,7 +162,10 @@ def _candidates(document: SemanticVideoDocument) -> list[_Candidate]:
                 source_range=source_range,
                 score=score,
                 duplicate_group=duplicate_group,
-                reason=f"interest={interest:.3f}; quality={quality:.3f}",
+                reason=(
+                    f"interest={interest:.3f}; quality={quality:.3f}"
+                    + ("; capped for pacing" if capped else "")
+                ),
             )
         )
     return candidates

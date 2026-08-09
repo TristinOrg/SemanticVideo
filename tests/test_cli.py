@@ -205,12 +205,24 @@ def test_plan_updates_manifest_atomically(
     manifest = tmp_path / "clip.semantic.json"
     manifest.write_text(plannable_document().model_dump_json(), encoding="utf-8")
 
-    assert main(["plan", str(manifest), "--target-duration", "2"]) == 0
+    assert (
+        main(
+            [
+                "plan",
+                str(manifest),
+                "--target-duration",
+                "2",
+                "--maximum-clip-duration",
+                "1",
+            ]
+        )
+        == 0
+    )
     restored = SemanticVideoDocument.model_validate_json(
         manifest.read_text(encoding="utf-8")
     )
-    assert restored.edit_plans[0].duration_seconds == 2
-    assert "with 1 clips (2.000s)" in capsys.readouterr().out
+    assert restored.edit_plans[0].duration_seconds == 1
+    assert "with 1 clips (1.000s)" in capsys.readouterr().out
     assert not list(tmp_path.glob("*.tmp"))
 
 

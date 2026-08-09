@@ -89,11 +89,28 @@ def test_planner_fits_target_and_can_keep_ranked_order() -> None:
     assert "trimmed" in (plan.clips[-1].reason or "")
 
 
+def test_planner_caps_long_clips_for_pacing() -> None:
+    plan = create_edit_plan(
+        _document(),
+        target_duration_seconds=6,
+        maximum_clip_seconds=3,
+        preserve_source_order=False,
+    )
+
+    assert [clip.source_segment_id for clip in plan.clips] == ["shot.2", "shot.3"]
+    assert [clip.source_range.duration.seconds for clip in plan.clips] == [3, 3]
+    assert all("capped for pacing" in (clip.reason or "") for clip in plan.clips)
+
+
 def test_planner_rejects_invalid_constraints_and_empty_candidates() -> None:
     with pytest.raises(ValueError, match="target duration"):
         create_edit_plan(_document(), target_duration_seconds=0)
     with pytest.raises(ValueError, match="minimum clip"):
         create_edit_plan(_document(), minimum_clip_seconds=0)
+    with pytest.raises(ValueError, match="maximum clip duration must"):
+        create_edit_plan(_document(), maximum_clip_seconds=0)
+    with pytest.raises(ValueError, match="shorter than the minimum"):
+        create_edit_plan(_document(), minimum_clip_seconds=1, maximum_clip_seconds=0.5)
     with pytest.raises(EditPlanningError, match="no usable"):
         empty = _document().model_copy(update={"segments": ()})
         create_edit_plan(empty)

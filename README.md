@@ -116,7 +116,8 @@ generation is unavailable.
 Turn the analysis into a reviewable rough cut:
 
 ```bash
-uv run semanticvideo plan GX010231.semantic.json --target-duration 60
+uv run semanticvideo plan GX010231.semantic.json \
+  --target-duration 60 --maximum-clip-duration 8
 uv run semanticvideo render GX010231.semantic.json --output GX010231.roughcut.mp4
 ```
 

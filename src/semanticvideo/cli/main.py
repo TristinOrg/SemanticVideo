@@ -212,6 +212,12 @@ def build_parser() -> argparse.ArgumentParser:
         metavar="SECONDS",
     )
     plan_parser.add_argument(
+        "--maximum-clip-duration",
+        type=_positive_float,
+        metavar="SECONDS",
+        help="Cap each selected source range to improve pacing.",
+    )
+    plan_parser.add_argument(
         "--ranked-order",
         action="store_true",
         help="Keep interest ranking instead of restoring source order.",
@@ -305,6 +311,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 document,
                 target_duration_seconds=args.target_duration,
                 minimum_clip_seconds=args.minimum_clip_duration,
+                maximum_clip_seconds=args.maximum_clip_duration,
                 preserve_source_order=not args.ranked_order,
                 name=args.name,
             )
