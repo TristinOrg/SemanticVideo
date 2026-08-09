@@ -1,0 +1,231 @@
+{
+  "schema_version": "0.1.0",
+  "document_id": "document.GX010231",
+  "generated_at": "2026-08-09T09:00:00Z",
+  "media": {
+    "id": "asset.GX010231",
+    "uri": "GX010231.MP4",
+    "duration": {
+      "value": 120000,
+      "rate": 1000
+    },
+    "file_size": 183728192,
+    "modified_at": "2026-05-18T12:35:10Z",
+    "checksum": {
+      "algorithm": "sha256",
+      "value": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    },
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "streams": [
+      {
+        "kind": "video",
+        "id": "stream.video.0",
+        "index": 0,
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "pixel_format": "yuv420p",
+        "frame_rate": {
+          "numerator": 30000,
+          "denominator": 1001
+        },
+        "rotation_degrees": 0,
+        "color_primaries": "bt709",
+        "color_transfer": "bt709",
+        "color_space": "bt709",
+        "variable_frame_rate": false
+      },
+      {
+        "kind": "audio",
+        "id": "stream.audio.1",
+        "index": 1,
+        "codec": "aac",
+        "sample_rate": 48000,
+        "channels": 2,
+        "channel_layout": "stereo",
+        "language": "zho"
+      }
+    ],
+    "metadata": {
+      "camera": "travel-camera"
+    }
+  },
+  "entities": [
+    {
+      "id": "person.filmer",
+      "type": "person",
+      "label": "filmer",
+      "aliases": ["narrator"]
+    },
+    {
+      "id": "place.shibuya",
+      "type": "place",
+      "label": "Shibuya Crossing"
+    }
+  ],
+  "segments": [
+    {
+      "id": "shot.00023",
+      "kind": "shot",
+      "time_range": {
+        "start": {"value": 41200, "rate": 1000},
+        "duration": {"value": 6600, "rate": 1000}
+      },
+      "label": "Shibuya crossing at night",
+      "representative_times": [
+        {"value": 44000, "rate": 1000}
+      ],
+      "annotation_ids": [
+        "annotation.scene.23",
+        "annotation.location.23",
+        "annotation.speech.23",
+        "annotation.quality.23"
+      ]
+    }
+  ],
+  "annotations": [
+    {
+      "id": "annotation.scene.23",
+      "kind": "scene",
+      "time_range": {
+        "start": {"value": 41200, "rate": 1000},
+        "duration": {"value": 6600, "rate": 1000}
+      },
+      "stream_id": "stream.video.0",
+      "confidence": 1.0,
+      "status": "human_authored",
+      "provenance": [
+        {
+          "source": "manual",
+          "generated_at": "2026-08-09T09:00:00Z",
+          "confidence": 1.0
+        }
+      ],
+      "tags": ["urban", "night", "crowded", "establishing"],
+      "value": {
+        "description": "Walking through Shibuya Crossing at night",
+        "environment": ["urban", "night", "crowded"],
+        "shot_type": "wide",
+        "camera_movement": "handheld tracking",
+        "editorial_role": "establishing"
+      }
+    },
+    {
+      "id": "annotation.location.23",
+      "kind": "location",
+      "time_range": {
+        "start": {"value": 41200, "rate": 1000},
+        "duration": {"value": 6600, "rate": 1000}
+      },
+      "confidence": 0.98,
+      "status": "human_reviewed",
+      "provenance": [
+        {
+          "source": "manual",
+          "generated_at": "2026-08-09T09:02:00Z",
+          "confidence": 1.0,
+          "evidence": [
+            {"type": "travel_log", "value": "Shibuya, Tokyo"}
+          ]
+        }
+      ],
+      "value": {
+        "name": "Shibuya Crossing, Tokyo",
+        "entity_id": "place.shibuya",
+        "point": {
+          "latitude": 35.6595,
+          "longitude": 139.7005
+        }
+      }
+    },
+    {
+      "id": "annotation.speech.23",
+      "kind": "speech",
+      "time_range": {
+        "start": {"value": 42100, "rate": 1000},
+        "duration": {"value": 2500, "rate": 1000}
+      },
+      "stream_id": "stream.audio.1",
+      "confidence": 1.0,
+      "status": "human_authored",
+      "provenance": [
+        {
+          "source": "manual",
+          "generated_at": "2026-08-09T09:04:00Z",
+          "confidence": 1.0
+        }
+      ],
+      "value": {
+        "text": "现在我们到了涩谷。",
+        "language": "zh-CN",
+        "speaker_entity_id": "person.filmer",
+        "words": [
+          {
+            "text": "涩谷",
+            "time_range": {
+              "start": {"value": 43500, "rate": 1000},
+              "duration": {"value": 500, "rate": 1000}
+            },
+            "confidence": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "annotation.quality.23",
+      "kind": "quality",
+      "time_range": {
+        "start": {"value": 41200, "rate": 1000},
+        "duration": {"value": 6600, "rate": 1000}
+      },
+      "stream_id": "stream.video.0",
+      "confidence": 0.91,
+      "status": "machine_generated",
+      "provenance": [
+        {
+          "source": "signal_analysis",
+          "generated_at": "2026-08-09T09:06:00Z",
+          "generator": {
+            "name": "semanticvideo-quality",
+            "version": "0.1.0"
+          },
+          "confidence": 0.91
+        }
+      ],
+      "evidence": [
+        {
+          "type": "representative_frame",
+          "artifact_id": "artifact.frame.23"
+        }
+      ],
+      "value": {
+        "sharpness": 0.88,
+        "stability": 0.72,
+        "exposure_quality": 0.91,
+        "noise_level": 0.18,
+        "usable": true
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "artifact.frame.23",
+      "type": "representative_frame",
+      "uri": "artifacts/GX010231/shot_00023.jpg",
+      "media_type": "image/jpeg"
+    }
+  ],
+  "analysis_runs": [
+    {
+      "id": "analysis.quality.1",
+      "analyzer": "semanticvideo-quality",
+      "analyzer_version": "0.1.0",
+      "started_at": "2026-08-09T09:05:00Z",
+      "completed_at": "2026-08-09T09:06:00Z",
+      "capabilities": ["quality"],
+      "parameters": {"sample_count": 3},
+      "annotation_ids": ["annotation.quality.23"]
+    }
+  ]
+}
+

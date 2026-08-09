@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a capability or schema extension.
+title: "feat: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Concrete use case
+      description: Describe the application and media workflow this enables.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed representation
+      description: Show example data when the request affects the schema.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+
