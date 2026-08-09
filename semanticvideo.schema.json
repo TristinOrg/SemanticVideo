@@ -276,6 +276,18 @@
           "default": null,
           "title": "Loudness Lufs"
         },
+        "mean_volume_dbfs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean Volume Dbfs"
+        },
         "music_mood": {
           "default": [],
           "items": {
@@ -283,6 +295,18 @@
           },
           "title": "Music Mood",
           "type": "array"
+        },
+        "peak_volume_dbfs": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Volume Dbfs"
         },
         "sound_events": {
           "default": [],

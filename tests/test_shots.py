@@ -79,6 +79,17 @@ def test_build_shot_ranges_rejects_non_positive_minimum() -> None:
         shots.build_shot_ranges(RationalTime(value=1, rate=1), (), minimum_duration=0)
 
 
+def test_representative_times_sample_inside_shot() -> None:
+    time_range = shots.build_shot_ranges(RationalTime(value=4, rate=1), ())[0]
+    assert [item.fraction for item in shots.representative_times(time_range)] == [
+        Fraction(1),
+        Fraction(2),
+        Fraction(3),
+    ]
+    with pytest.raises(ValueError, match="between 1 and 9"):
+        shots.representative_times(time_range, count=0)
+
+
 def test_extract_frame_requires_written_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

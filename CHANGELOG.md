@@ -20,3 +20,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - Opt-in technical, embedded metadata, SHA-256, and raw FFprobe information.
 - Schema 0.2 compatibility foundation for scene summaries, audio observations,
   actionable editing signals, explicit capability states, and segment relations.
+- Multi-frame sampling with deterministic exposure, sharpness, visual-change,
+  audio-level, embedded-location, duplicate, and same-scene analysis.

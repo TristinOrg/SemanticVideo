@@ -101,6 +101,13 @@ def build_parser() -> argparse.ArgumentParser:
         help="Merge shorter detected shots (default: 0.5).",
     )
     analyze_parser.add_argument(
+        "--frames-per-shot",
+        type=_frame_count,
+        default=3,
+        metavar="COUNT",
+        help="Representative frames sampled inside each shot, 1-9 (default: 3).",
+    )
+    analyze_parser.add_argument(
         "--include",
         action="append",
         choices=sorted(INCLUDE_CHOICES),
@@ -162,6 +169,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 timeout_seconds=args.timeout,
                 scene_threshold=args.scene_threshold,
                 minimum_shot_duration=args.minimum_shot_duration,
+                frames_per_shot=args.frames_per_shot,
                 language=args.language,
                 include=args.include,
             )
@@ -190,6 +198,13 @@ def _unit_float(value: str) -> float:
     parsed = float(value)
     if not 0 < parsed < 1:
         raise argparse.ArgumentTypeError("must be between zero and one")
+    return parsed
+
+
+def _frame_count(value: str) -> int:
+    parsed = int(value)
+    if not 1 <= parsed <= 9:
+        raise argparse.ArgumentTypeError("must be between 1 and 9")
     return parsed
 
 

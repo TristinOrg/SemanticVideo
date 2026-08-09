@@ -80,6 +80,22 @@ def representative_time(time_range: TimeRange) -> RationalTime:
     return _time(time_range.start_fraction + time_range.duration_fraction / 2)
 
 
+def representative_times(
+    time_range: TimeRange, *, count: int = 3
+) -> tuple[RationalTime, ...]:
+    """Sample evenly inside a shot so models can observe temporal change."""
+
+    if not 1 <= count <= 9:
+        raise ValueError("representative frame count must be between 1 and 9")
+    return tuple(
+        _time(
+            time_range.start_fraction
+            + time_range.duration_fraction * Fraction(index, count + 1)
+        )
+        for index in range(1, count + 1)
+    )
+
+
 def extract_frame(
     path: Path,
     timestamp: RationalTime,

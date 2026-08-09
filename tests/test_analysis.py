@@ -6,7 +6,9 @@ from pathlib import Path
 import pytest
 
 from semanticvideo.analysis import pipeline
+from semanticvideo.analysis.signals import AudioLevels, FrameSignals
 from semanticvideo.analysis.types import ShotDescription
+from semanticvideo.errors import FFmpegExecutionError
 from semanticvideo.schema import (
     AnnotationStatus,
     AudioStream,
@@ -87,6 +89,22 @@ def configure_pipeline(monkeypatch: pytest.MonkeyPatch, path: Path) -> None:
         output.write_bytes(b"jpeg")
 
     monkeypatch.setattr(pipeline, "extract_frame", extract)
+    monkeypatch.setattr(
+        pipeline,
+        "analyze_representative_frames",
+        lambda _frames: FrameSignals(
+            quality_score=0.8,
+            exposure_score=0.7,
+            sharpness_score=0.9,
+            motion_score=0.2,
+            average_hash=1,
+        ),
+    )
+    monkeypatch.setattr(
+        pipeline,
+        "measure_audio_levels",
+        lambda *_args, **_kwargs: AudioLevels(mean_dbfs=-20, peak_dbfs=-2),
+    )
 
 
 def test_analyze_video_generates_required_editing_information(
@@ -101,20 +119,33 @@ def test_analyze_video_generates_required_editing_information(
     )
 
     assert document.document_id == "document.test"
-    assert len(document.segments) == len(document.annotations) == 2
-    assert document.segments[0].annotation_ids == ("annotation.scene.0001",)
+    assert len(document.segments) == 2
+    assert len(document.annotations) == 6
+    assert document.segments[0].annotation_ids == (
+        "annotation.scene.0001",
+        "annotation.editorial.0001",
+        "annotation.audio.0001",
+    )
     first_annotation = document.annotations[0]
     assert isinstance(first_annotation, SceneAnnotation)
-    assert first_annotation.value.description is not None
-    assert first_annotation.value.description.endswith("zh-CN")
+    assert first_annotation.value.summary is not None
+    assert first_annotation.value.summary.endswith("zh-CN")
     assert first_annotation.value.actions == ("walking",)
     assert document.analysis_runs[0].capabilities == (
         "media",
         "shots",
         "scene_descriptions",
+        "editing_signals",
+        "segment_relations",
+        "audio_levels",
+        "embedded_location",
     )
     assert document.media.bit_rate is None
     assert document.media.metadata == {}
+    assert {relation.type for relation in document.relations} == {
+        "same_scene",
+        "duplicate",
+    }
 
 
 def test_optional_information_stays_in_same_document(
@@ -147,3 +178,31 @@ def test_analyze_rejects_unknown_optional_information(tmp_path: Path) -> None:
         pipeline.analyze_video(
             tmp_path / "clip.mp4", describer=StubDescriber(), include=("faces",)
         )
+    with pytest.raises(ValueError, match="frames per shot"):
+        pipeline.analyze_video(
+            tmp_path / "clip.mp4", describer=StubDescriber(), frames_per_shot=0
+        )
+
+
+def test_pipeline_reports_audio_failure_and_embedded_location(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    media_path = tmp_path / "trip.mp4"
+    media_path.write_bytes(b"clip")
+    configure_pipeline(monkeypatch, media_path)
+    located = inspected_media(media_path).model_copy(
+        update={"metadata": {"location": "+35.0+139.0/"}}
+    )
+    monkeypatch.setattr(pipeline, "inspect_media", lambda *_args, **_kwargs: located)
+
+    def fail_audio(*_args: object, **_kwargs: object) -> AudioLevels:
+        raise FFmpegExecutionError("audio analysis", 2, "bad audio")
+
+    monkeypatch.setattr(pipeline, "measure_audio_levels", fail_audio)
+
+    document = pipeline.analyze_video(media_path, describer=StubDescriber())
+
+    capability = {item.name: item for item in document.capabilities}
+    assert capability["audio_levels"].status == "failed"
+    assert capability["embedded_location"].status == "complete"
+    assert any(annotation.kind == "location" for annotation in document.annotations)

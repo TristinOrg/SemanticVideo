@@ -23,6 +23,7 @@ classifiers = [
   "Topic :: Multimedia :: Video",
 ]
 dependencies = [
+  "pillow>=12",
   "pydantic>=2.11,<3",
 ]
 

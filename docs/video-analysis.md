@@ -12,7 +12,7 @@ The command treats the following as required rather than optional:
 - source URI, exact duration, file size, container, codecs, dimensions, frame rate,
   audio sample rate, and channel count
 - contiguous shot ranges covering the complete source duration
-- one representative timestamp inside every shot
+- three evenly spaced representative timestamps inside every shot by default
 - one structured scene annotation for every shot
 - provenance, evidence timestamp, provider/model identity, and analysis parameters
 
@@ -22,6 +22,22 @@ with an error and does not pretend that the analysis is complete.
 Scene annotations include a concise description plus optional environment, subjects,
 actions, objects, visible text, location hint, shot type, camera movement, editorial
 role, and confidence. Unknown values remain empty instead of being guessed.
+
+## Deterministic editing signals
+
+The default pipeline does not require a model for basic editing fitness. It measures
+representative-frame exposure, edge-based sharpness, visual change, average-hash
+similarity, and per-shot mean/peak audio level. These measurements produce quality,
+interest, usability, conservative trim handles, duplicate groups, and same-scene or
+duplicate relations. Reasons retain the component values so heuristics remain
+reviewable rather than looking like model facts.
+
+`--frames-per-shot` accepts 1 through 9. Three frames balance temporal evidence and
+cost; visual model providers receive all sampled images in one shot request.
+
+Embedded location tags are parsed separately from visual `location_hint` guesses.
+ISO-6709 coordinates become a typed geographic point with metadata-key evidence. If
+no location exists, the capability is explicitly marked `omitted`.
 
 ## OpenAI provider
 

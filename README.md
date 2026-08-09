@@ -56,6 +56,8 @@ video-understanding path:
 - a scriptable `semanticvideo inspect` command with JSON output
 - FFmpeg scene-change detection and representative-frame extraction
 - provider-neutral shot descriptions with an OpenAI adapter and reviewed JSON import
+- deterministic multi-frame quality, audio-level, location, similarity, and editing
+  signals that do not require an AI service
 - one editing-oriented `.semantic.json` containing media, shots, descriptions,
   provenance, and analysis parameters
 - tests, linting, typing, CI, documentation, and architectural decisions
@@ -96,7 +98,8 @@ uv run semanticvideo analyze GX010231.MP4 --language zh-CN
 ```
 
 The default `GX010231.semantic.json` always contains core media facts, contiguous
-shot ranges, one representative time per shot, and a structured scene description.
+shot ranges, three representative times per shot, structured scene descriptions,
+editing fitness, audio levels, and segment relations.
 The command fails instead of silently writing an incomplete manifest if description
 generation is unavailable.
 

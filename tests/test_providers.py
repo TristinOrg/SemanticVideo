@@ -23,9 +23,9 @@ def test_json_provider_validates_and_resolves_shots(tmp_path: Path) -> None:
     )
     provider = JsonFileShotDescriber(path)
 
-    assert provider.describe("shot.0001", (), language="en").description.startswith(
-        "Traveler"
-    )
+    result = provider.describe("shot.0001", (), language="en")
+    assert result.description is not None
+    assert result.description.startswith("Traveler")
     with pytest.raises(DescriptionProviderError, match="no entry"):
         provider.describe("shot.0002", (), language="en")
 

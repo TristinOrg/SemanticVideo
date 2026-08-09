@@ -154,6 +154,8 @@ class AudioInfo(SemanticModel):
     language_hint: str | None = None
     speech_probability: float | None = Field(default=None, ge=0, le=1)
     loudness_lufs: float | None = None
+    mean_volume_dbfs: float | None = None
+    peak_volume_dbfs: float | None = None
     tempo_bpm: float | None = Field(default=None, gt=0)
 
 

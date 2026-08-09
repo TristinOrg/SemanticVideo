@@ -160,3 +160,5 @@ def test_analyze_provider_arguments_are_validated(
 def test_scene_threshold_must_be_a_unit_float() -> None:
     with pytest.raises(SystemExit):
         build_parser().parse_args(["analyze", "clip.mp4", "--scene-threshold", "1"])
+    with pytest.raises(SystemExit):
+        build_parser().parse_args(["analyze", "clip.mp4", "--frames-per-shot", "10"])

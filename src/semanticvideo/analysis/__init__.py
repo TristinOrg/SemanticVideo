@@ -6,6 +6,7 @@ from semanticvideo.analysis.shots import (
     detect_shot_boundaries,
     extract_frame,
     representative_time,
+    representative_times,
 )
 from semanticvideo.analysis.types import ShotDescriber, ShotDescription
 
@@ -17,4 +18,5 @@ __all__ = [
     "detect_shot_boundaries",
     "extract_frame",
     "representative_time",
+    "representative_times",
 ]
