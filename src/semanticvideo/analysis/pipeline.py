@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tempfile
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -67,6 +68,7 @@ from semanticvideo.schema import (
     SegmentKind,
     SegmentRelation,
     SegmentRelationType,
+    SemanticMoment,
     SemanticSummary,
     SemanticVideoDocument,
     SpeechAnnotation,
@@ -112,8 +114,9 @@ def analyze_video(
     adaptive_frames: bool = False,
     maximum_frame_interval_seconds: float = 8.0,
     evidence_directory: Path | None = None,
+    artifact_uri_base: Path | None = None,
 ) -> SemanticVideoDocument:
-    """Generate one complete editing-oriented SemanticVideo JSON document."""
+    """Generate one reusable, time-aligned SemanticVideo JSON document."""
 
     invalid = set(include) - INCLUDE_CHOICES
     if invalid:
@@ -177,7 +180,11 @@ def analyze_video(
                         Artifact(
                             id=f"artifact.frame.{index:04d}.{frame_index:02d}",
                             type="representative_frame",
-                            uri=str(frame),
+                            uri=(
+                                os.path.relpath(frame, artifact_uri_base)
+                                if artifact_uri_base is not None
+                                else str(frame)
+                            ),
                             media_type="image/jpeg",
                             checksum=_sha256(frame),
                             time_range=TimeRange(
@@ -487,14 +494,37 @@ def analyze_video(
         )
         extensions["org.semanticvideo.ffprobe"] = cast(JsonValue, raw)
 
+    full_range = TimeRange(start=RationalTime(value=0, rate=1), duration=media.duration)
     capabilities = (
-        CapabilityReport(name="media", status=CapabilityStatus.COMPLETE, required=True),
-        CapabilityReport(name="shots", status=CapabilityStatus.COMPLETE, required=True),
+        CapabilityReport(
+            name="media",
+            status=CapabilityStatus.COMPLETE,
+            required=True,
+            analyzed_fields=("media",),
+            covered_ranges=(full_range,),
+        ),
+        CapabilityReport(
+            name="shots",
+            status=CapabilityStatus.COMPLETE,
+            required=True,
+            analyzed_fields=("segments", "representative_times"),
+            covered_ranges=(full_range,),
+        ),
         CapabilityReport(
             name="scene_descriptions",
             status=CapabilityStatus.COMPLETE,
             required=True,
             provider=describer.provider or describer.name,
+            analyzed_fields=(
+                "summary",
+                "environment",
+                "subjects",
+                "actions",
+                "objects",
+                "visible_text",
+                "moments",
+            ),
+            covered_ranges=(full_range,),
         ),
         CapabilityReport(
             name="editing_signals", status=CapabilityStatus.COMPLETE, required=True
@@ -534,6 +564,7 @@ def analyze_video(
         analysis_runs=(run,),
         capabilities=capabilities,
         relations=relations,
+        moments=_moments(observations),
         summaries=_summaries(observations, media.duration),
         extensions=extensions,
     )
@@ -563,6 +594,26 @@ def _summaries(
         child_ids=tuple(item.id for item in shot_summaries),
     )
     return (video, *shot_summaries)
+
+
+def _moments(observations: list[_ShotObservation]) -> tuple[SemanticMoment, ...]:
+    moments: list[SemanticMoment] = []
+    for observation in observations:
+        for index, moment in enumerate(observation.description.moments, 1):
+            moments.append(
+                SemanticMoment(
+                    id=f"moment.{observation.index:04d}.{index:02d}",
+                    time_range=moment.time_range,
+                    summary=moment.summary,
+                    subjects=moment.subjects,
+                    actions=moment.actions,
+                    objects=moment.objects,
+                    visible_text=moment.visible_text,
+                    parent_segment_id=observation.shot_id,
+                    confidence=moment.confidence,
+                )
+            )
+    return tuple(moments)
 
 
 def _speech_annotations(

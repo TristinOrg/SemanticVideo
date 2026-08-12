@@ -1,9 +1,10 @@
 # Video analysis
 
-`semanticvideo analyze` is the first end-to-end editing-oriented analysis path. It
+`semanticvideo analyze` is the end-to-end reusable-understanding path. It
 uses FFprobe for source facts, FFmpeg for shot boundaries and representative JPEGs,
 and a replaceable visual-description provider. The final deliverable is one
-`.semantic.json`; temporary frames are removed after analysis.
+`.semantic.json`. Frames are temporary by default; `--evidence-dir` retains them
+as reusable, checksummed artifacts linked from the manifest.
 
 ## Required output
 

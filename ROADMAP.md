@@ -3,7 +3,7 @@
 SemanticVideo is developed as independently reviewable milestones. Later work must
 not compromise the provider-neutral schema foundation.
 
-## Completed in 0.2.0
+## Completed through 0.3.0
 
 - **Milestone 0 — Repository foundation:** packaging, documentation, tests,
   linting, typing, CI, contribution guidance, and ADRs.
@@ -20,16 +20,21 @@ not compromise the provider-neutral schema foundation.
   `EditPlan` generation, pacing controls, and atomic FFmpeg rough-cut rendering.
 - **Japan trip workflow:** a real source video can now travel from analysis through a
   single semantic manifest to a human-reviewable MP4 rough cut.
+- **Milestone 5 — reusable understanding:** adaptive evidence sampling, persistent
+  keyframe artifacts, time-aligned moments, summary hierarchy, explicit field/range
+  coverage, focused enrichment, and rebuildable semantic text retrieval.
 
 ## Next milestones
 
-1. **Semantic retrieval:** text/image embeddings behind a replaceable local index.
-2. **Editorial interchange:** OpenTimelineIO export and import for NLE handoff.
-3. **Story planning:** multi-source selection, chapters, narrative beats, music and
+1. **Embedding retrieval:** image/text embeddings behind a replaceable local index.
+2. **High-recall understanding:** OCR, audio events, orientation intervals, dynamic
+   sampling triggers, and calibrated semantic completeness evaluation.
+3. **Editorial interchange:** OpenTimelineIO export and import for NLE handoff.
+4. **Story planning:** multi-source selection, chapters, narrative beats, music and
    transcript-aware pacing, and configurable editorial policies.
-4. **Human review UI:** inspect evidence, correct semantic claims, lock clips, and
+5. **Human review UI:** inspect evidence, correct semantic claims, lock clips, and
    compare generated plans before rendering.
-5. **Performance:** incremental caches, parallel extraction, hardware encoding, and
+6. **Performance:** incremental caches, parallel extraction, hardware encoding, and
    proxy workflows for long or high-resolution projects.
 
 ## Future exploration

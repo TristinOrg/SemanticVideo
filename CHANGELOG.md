@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.0 - 2026-08-12
+
+### Added
+
+- Time-aligned semantic moments and video/shot summary hierarchy.
+- Claim nature for observations, inferences, assessments, and user assertions.
+- Capability field and source-range coverage declarations.
+- Adaptive representative frames and optional persistent evidence artifacts.
+- Focused supplement merging with protection for human-confirmed claims.
+- Rebuildable JSONL semantic indexes plus `gaps`, `enrich`, `index`, and `search`.
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),

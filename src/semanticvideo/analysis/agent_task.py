@@ -122,6 +122,7 @@ def prepare_agent_task(
             "actions": [],
             "objects": [],
             "visible_text": [],
+            "moments": [],
         }
 
     audio_uri = None
@@ -143,6 +144,7 @@ def prepare_agent_task(
             "Use structured subjects, actions, objects, environment, text, "
             "and framing.",
             "Use summary only as a concise human-readable review field.",
+            "Use moments with exact source ranges for important changes inside a shot.",
             "If audio exists, add timed transcript segments only when speech "
             "is audible.",
             "Do not guess identity or location; location needs visible or "

@@ -1,12 +1,15 @@
 # SemanticVideo
 
-Open semantic video format and AI-native video understanding SDK.
+Open, reusable semantic sidecar format for video understanding.
 
-SemanticVideo adds a reusable, machine-readable semantic layer beside existing
-media files. It does not replace MP4, MOV, MKV, codecs, editors, or renderers.
+SemanticVideo analyzes media once and preserves time-aligned core content,
+evidence, confidence, coverage, and provenance beside the source file. AI agents
+and applications can reuse that understanding instead of repeatedly decoding the
+whole video and extracting the same screenshots. It does not replace MP4, MOV,
+MKV, codecs, editors, or renderers.
 
 ```text
-Raw video -> analyze once -> semantic manifest -> any AI/application
+Raw video -> understand once -> reusable semantic manifest -> any AI/application
 ```
 
 > [!IMPORTANT]
@@ -44,8 +47,8 @@ came from.
 
 ## Current scope
 
-Milestones 0 through 4 establish the schema foundation and the first complete
-analysis-to-rough-cut path:
+Milestones 0 through 5 establish the reusable semantic cache layer and one
+reference rough-cut consumer:
 
 - Pydantic models for media, streams, exact time, segments, annotations,
   entities, evidence, and provenance
@@ -62,9 +65,15 @@ analysis-to-rough-cut path:
   provenance, and analysis parameters
 - validated, explainable `EditPlan` objects generated from structured editing signals
 - deterministic FFmpeg trim-and-concatenate rendering with atomic output handling
+- adaptive representative-frame sampling for long shots
+- optional persistent keyframe evidence linked from semantic claims
+- video/shot summary hierarchy and time-aligned moments inside shots
+- explicit capability fields and covered source ranges
+- focused supplements that preserve human-confirmed claims
+- rebuildable JSONL search indexes across one or many manifests
 - tests, linting, typing, CI, documentation, and architectural decisions
 
-Search and OpenTimelineIO interchange remain later milestones.
+Embeddings and OpenTimelineIO interchange remain later milestones.
 
 ## Quick start
 
@@ -113,6 +122,36 @@ editing fitness, audio levels, and segment relations.
 The command fails instead of silently writing an incomplete manifest if description
 generation is unavailable.
 
+Persist reusable evidence and increase coverage for long shots:
+
+```powershell
+uv run semanticvideo analyze GX010231.MP4 `
+  --adaptive-frames `
+  --maximum-frame-interval 8 `
+  --evidence-dir GX010231.semantic\keyframes
+```
+
+Before reopening the source, ask whether the manifest already covers a question:
+
+```powershell
+uv run semanticvideo gaps GX010231.semantic.json `
+  --field moments.actions --start 30 --duration 10
+```
+
+If a focused agent inspection produces a validated supplement, merge it without
+overwriting human-authored or human-reviewed claims:
+
+```powershell
+uv run semanticvideo enrich GX010231.semantic.json response.supplement.json
+```
+
+Build and query a disposable index (the manifests remain authoritative):
+
+```powershell
+uv run semanticvideo index *.semantic.json -o semantic.index.jsonl
+uv run semanticvideo search semantic.index.jsonl "Tokyo Tower Conan"
+```
+
 Turn the analysis into a reviewable rough cut:
 
 ```bash
@@ -149,6 +188,7 @@ print(document.media.duration.seconds)
 ```
 
 See [agent workflow](docs/agent-workflow.md),
+[reusable understanding](docs/reusable-understanding.md),
 [editing and rendering](docs/editing-and-rendering.md),
 [video analysis](docs/video-analysis.md),
 [media inspection](docs/media-inspection.md),

@@ -76,7 +76,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     analyze_parser = commands.add_parser(
         "analyze",
-        help="Generate one editing-oriented JSON with shots and visual descriptions.",
+        help="Generate reusable time-aligned video understanding as JSON.",
     )
     analyze_parser.add_argument("input", type=Path, help="Input video file.")
     analyze_parser.add_argument(
@@ -339,6 +339,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 adaptive_frames=args.adaptive_frames,
                 maximum_frame_interval_seconds=args.maximum_frame_interval,
                 evidence_directory=args.evidence_dir,
+                artifact_uri_base=output.parent,
             )
             rendered = document.model_dump_json(
                 indent=None if args.compact else 2,

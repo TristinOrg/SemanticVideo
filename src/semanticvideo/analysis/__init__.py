@@ -25,11 +25,16 @@ from semanticvideo.analysis.transcription import (
     TranscriptSegmentResult,
     TranscriptWordResult,
 )
-from semanticvideo.analysis.types import ShotDescriber, ShotDescription
+from semanticvideo.analysis.types import (
+    MomentDescription,
+    ShotDescriber,
+    ShotDescription,
+)
 
 __all__ = [
     "AgentResponse",
     "AgentTaskBundle",
+    "MomentDescription",
     "SemanticSupplement",
     "ShotDescriber",
     "ShotDescription",

@@ -1,4 +1,8 @@
-# SemanticVideo format 0.1
+# SemanticVideo format 0.3
+
+> Schema 0.3 adds hierarchical summaries, time-aligned moments, persistent
+> evidence artifacts, claim nature, and explicit capability field/range coverage.
+> Older 0.1 and 0.2 manifests remain readable.
 
 This document describes the normative intent of the initial JSON sidecar. The
 generated JSON Schema is the machine-readable validation contract.

@@ -57,7 +57,11 @@ def index_document(document: SemanticVideoDocument) -> tuple[SearchRecord, ...]:
         )
         rows.append(_record(document, moment.id, "moment", text, moment.time_range))
     for annotation in document.annotations:
-        value = annotation.value.model_dump(exclude_none=True)
+        value = (
+            annotation.value
+            if isinstance(annotation.value, dict)
+            else annotation.value.model_dump(exclude_none=True)
+        )
         text = " ".join(_strings(value))
         if text:
             rows.append(
