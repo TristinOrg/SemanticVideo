@@ -19,6 +19,7 @@ from semanticvideo.schema.edit import EditPlan
 from semanticvideo.schema.entity import Entity
 from semanticvideo.schema.media import Identifier, MediaInfo
 from semanticvideo.schema.segment import Segment
+from semanticvideo.schema.time import TimeRange
 
 
 class Artifact(SemanticModel):
@@ -29,6 +30,43 @@ class Artifact(SemanticModel):
     uri: str = Field(min_length=1)
     media_type: str | None = None
     checksum: str | None = None
+    time_range: "TimeRange | None" = None
+    metadata: dict[str, JsonValue] = Field(default_factory=dict)
+
+
+class SummaryLevel(StrEnum):
+    """Granularity of a human- and machine-readable semantic summary."""
+
+    VIDEO = "video"
+    CHAPTER = "chapter"
+    SHOT = "shot"
+
+
+class SemanticSummary(SemanticModel):
+    """A hierarchical summary that links back to precise source ranges."""
+
+    id: Identifier
+    level: SummaryLevel
+    text: str = Field(min_length=1)
+    time_range: "TimeRange"
+    child_ids: tuple[Identifier, ...] = ()
+    language: str | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+
+class SemanticMoment(SemanticModel):
+    """A meaningful change or occurrence inside a broader structural shot."""
+
+    id: Identifier
+    time_range: "TimeRange"
+    summary: str = Field(min_length=1)
+    subjects: tuple[str, ...] = ()
+    actions: tuple[str, ...] = ()
+    objects: tuple[str, ...] = ()
+    visible_text: tuple[str, ...] = ()
+    parent_segment_id: Identifier | None = None
+    annotation_ids: tuple[Identifier, ...] = ()
+    confidence: float | None = Field(default=None, ge=0, le=1)
 
 
 class AnalysisRun(SemanticModel):
@@ -69,6 +107,8 @@ class CapabilityReport(SemanticModel):
     required: bool = False
     provider: str | None = None
     message: str | None = None
+    analyzed_fields: tuple[str, ...] = ()
+    covered_ranges: tuple["TimeRange", ...] = ()
 
 
 class SegmentRelationType(StrEnum):
@@ -96,7 +136,7 @@ class SegmentRelation(SemanticModel):
 class SemanticVideoDocument(SemanticModel):
     """Root object for one source media asset's semantic sidecar."""
 
-    schema_version: Literal["0.1.0", "0.2.0"] = "0.2.0"
+    schema_version: Literal["0.1.0", "0.2.0", "0.3.0"] = "0.3.0"
     document_id: Identifier
     generated_at: datetime
     media: MediaInfo
@@ -108,6 +148,8 @@ class SemanticVideoDocument(SemanticModel):
     edit_plans: tuple[EditPlan, ...] = ()
     capabilities: tuple[CapabilityReport, ...] = ()
     relations: tuple[SegmentRelation, ...] = ()
+    moments: tuple[SemanticMoment, ...] = ()
+    summaries: tuple[SemanticSummary, ...] = ()
     extensions: dict[str, JsonValue] = Field(default_factory=dict)
 
     @model_validator(mode="after")
@@ -123,6 +165,8 @@ class SemanticVideoDocument(SemanticModel):
         )
         self._require_unique_ids("edit plan", [item.id for item in self.edit_plans])
         self._require_unique_ids("relation", [item.id for item in self.relations])
+        self._require_unique_ids("moment", [item.id for item in self.moments])
+        self._require_unique_ids("summary", [item.id for item in self.summaries])
         self._require_unique_ids(
             "capability", [item.name for item in self.capabilities]
         )
@@ -196,6 +240,45 @@ class SemanticVideoDocument(SemanticModel):
                         "editorial recommended range must be inside annotation range"
                     )
 
+        for artifact in self.artifacts:
+            if artifact.time_range is not None and artifact.time_range.end_fraction > media_end:
+                raise ValueError(f"artifact {artifact.id!r} exceeds media duration")
+
+        for capability in self.capabilities:
+            for covered in capability.covered_ranges:
+                if covered.end_fraction > media_end:
+                    raise ValueError(
+                        f"capability {capability.name!r} exceeds media duration"
+                    )
+
+        for moment in self.moments:
+            if moment.time_range.end_fraction > media_end:
+                raise ValueError(f"moment {moment.id!r} exceeds media duration")
+            if moment.parent_segment_id is not None:
+                self._require_reference(
+                    "moment parent segment", moment.parent_segment_id, segment_ids
+                )
+                parent = next(
+                    item for item in self.segments if item.id == moment.parent_segment_id
+                )
+                if not (
+                    parent.time_range.start_fraction <= moment.time_range.start_fraction
+                    and moment.time_range.end_fraction <= parent.time_range.end_fraction
+                ):
+                    raise ValueError("moment range must be inside its parent segment")
+            for annotation_id in moment.annotation_ids:
+                self._require_reference(
+                    "moment annotation", annotation_id, annotation_ids
+                )
+
+        summary_ids = {item.id for item in self.summaries}
+        for summary in self.summaries:
+            if summary.time_range.end_fraction > media_end:
+                raise ValueError(f"summary {summary.id!r} exceeds media duration")
+            for child_id in summary.child_ids:
+                self._require_reference("summary child", child_id, summary_ids)
+                if child_id == summary.id:
+                    raise ValueError("summary cannot be its own child")
         for run in self.analysis_runs:
             for annotation_id in run.annotation_ids:
                 self._require_reference(

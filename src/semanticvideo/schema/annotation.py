@@ -20,6 +20,15 @@ class AnnotationStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class ClaimNature(StrEnum):
+    """How consumers should interpret a semantic claim."""
+
+    OBSERVATION = "observation"
+    INFERENCE = "inference"
+    ASSESSMENT = "assessment"
+    USER_ASSERTION = "user_assertion"
+
+
 class SpatialRegion(SemanticModel):
     """Normalized top-left-origin rectangle within a video frame."""
 
@@ -185,6 +194,7 @@ class AnnotationBase(SemanticModel):
     """Fields common to every semantic claim."""
 
     id: Identifier
+    claim_nature: ClaimNature = ClaimNature.OBSERVATION
     time_range: TimeRange
     stream_id: Identifier | None = None
     spatial_region: SpatialRegion | None = None

@@ -248,3 +248,56 @@ def test_editorial_recommended_range_must_stay_inside_annotation(
     }
     with pytest.raises(ValidationError, match="recommended range"):
         SemanticVideoDocument.model_validate(valid_document_data)
+
+
+def test_moments_summaries_and_capability_coverage_are_validated(
+    valid_document_data: dict[str, Any],
+) -> None:
+    valid_document_data["moments"] = [
+        {
+            "id": "moment.1",
+            "time_range": {
+                "start": {"value": 1000, "rate": 1000},
+                "duration": {"value": 1000, "rate": 1000},
+            },
+            "summary": "The host enters the station",
+            "actions": ["entering"],
+            "parent_segment_id": "shot.1",
+            "annotation_ids": ["annotation.scene.1"],
+        }
+    ]
+    valid_document_data["summaries"] = [
+        {
+            "id": "summary.video",
+            "level": "video",
+            "text": "A short station visit",
+            "time_range": {
+                "start": {"value": 0, "rate": 1},
+                "duration": {"value": 10, "rate": 1},
+            },
+        }
+    ]
+    valid_document_data["capabilities"] = [
+        {
+            "name": "actions",
+            "status": "partial",
+            "analyzed_fields": ["moments.actions"],
+            "covered_ranges": [valid_document_data["moments"][0]["time_range"]],
+        }
+    ]
+    document = SemanticVideoDocument.model_validate(valid_document_data)
+    assert document.moments[0].actions == ("entering",)
+    assert document.summaries[0].level == "video"
+
+    valid_document_data["moments"][0]["parent_segment_id"] = "missing"
+    with pytest.raises(ValidationError, match="moment parent segment"):
+        SemanticVideoDocument.model_validate(valid_document_data)
+
+
+def test_claim_nature_distinguishes_observations_and_user_assertions(
+    valid_document_data: dict[str, Any],
+) -> None:
+    annotation = valid_document_data["annotations"][0]
+    annotation["claim_nature"] = "user_assertion"
+    document = SemanticVideoDocument.model_validate(valid_document_data)
+    assert document.annotations[0].claim_nature == "user_assertion"

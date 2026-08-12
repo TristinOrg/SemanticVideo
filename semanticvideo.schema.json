@@ -118,6 +118,24 @@
           "default": null,
           "title": "Media Type"
         },
+        "metadata": {
+          "additionalProperties": {
+            "$ref": "#/$defs/JsonValue"
+          },
+          "title": "Metadata",
+          "type": "object"
+        },
+        "time_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TimeRange"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "type": {
           "minLength": 1,
           "title": "Type",
@@ -140,6 +158,10 @@
     "AudioAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -465,6 +487,22 @@
       "additionalProperties": false,
       "description": "Explicitly distinguish absent, failed, and intentionally omitted data.",
       "properties": {
+        "analyzed_fields": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Analyzed Fields",
+          "type": "array"
+        },
+        "covered_ranges": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/TimeRange"
+          },
+          "title": "Covered Ranges",
+          "type": "array"
+        },
         "message": {
           "anyOf": [
             {
@@ -543,10 +581,25 @@
       "title": "Checksum",
       "type": "object"
     },
+    "ClaimNature": {
+      "description": "How consumers should interpret a semantic claim.",
+      "enum": [
+        "observation",
+        "inference",
+        "assessment",
+        "user_assertion"
+      ],
+      "title": "ClaimNature",
+      "type": "string"
+    },
     "CustomAnnotation": {
       "additionalProperties": false,
       "description": "Namespaced extension point for experimental annotation types.",
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -891,6 +944,10 @@
     "EditorialAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -1057,6 +1114,10 @@
     "EventAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -1316,6 +1377,10 @@
     "LocationAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -1655,6 +1720,10 @@
     "QualityAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -1886,6 +1955,10 @@
     "SceneAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -2261,6 +2334,170 @@
       "title": "SegmentRelationType",
       "type": "string"
     },
+    "SemanticMoment": {
+      "additionalProperties": false,
+      "description": "A meaningful change or occurrence inside a broader structural shot.",
+      "properties": {
+        "actions": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Actions",
+          "type": "array"
+        },
+        "annotation_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "title": "Annotation Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "objects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Objects",
+          "type": "array"
+        },
+        "parent_segment_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9_.:-]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Segment Id"
+        },
+        "subjects": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Subjects",
+          "type": "array"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "time_range": {
+          "$ref": "#/$defs/TimeRange"
+        },
+        "visible_text": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Visible Text",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "time_range",
+        "summary"
+      ],
+      "title": "SemanticMoment",
+      "type": "object"
+    },
+    "SemanticSummary": {
+      "additionalProperties": false,
+      "description": "A hierarchical summary that links back to precise source ranges.",
+      "properties": {
+        "child_ids": {
+          "default": [],
+          "items": {
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "type": "string"
+          },
+          "title": "Child Ids",
+          "type": "array"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Confidence"
+        },
+        "id": {
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9_.:-]+$",
+          "title": "Id",
+          "type": "string"
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Language"
+        },
+        "level": {
+          "$ref": "#/$defs/SummaryLevel"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "time_range": {
+          "$ref": "#/$defs/TimeRange"
+        }
+      },
+      "required": [
+        "id",
+        "level",
+        "text",
+        "time_range"
+      ],
+      "title": "SemanticSummary",
+      "type": "object"
+    },
     "SpatialRegion": {
       "additionalProperties": false,
       "description": "Normalized top-left-origin rectangle within a video frame.",
@@ -2302,6 +2539,10 @@
     "SpeechAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -2477,6 +2718,10 @@
     "SubjectAnnotation": {
       "additionalProperties": false,
       "properties": {
+        "claim_nature": {
+          "$ref": "#/$defs/ClaimNature",
+          "default": "observation"
+        },
         "confidence": {
           "anyOf": [
             {
@@ -2665,6 +2910,16 @@
       ],
       "title": "SubtitleStream",
       "type": "object"
+    },
+    "SummaryLevel": {
+      "description": "Granularity of a human- and machine-readable semantic summary.",
+      "enum": [
+        "video",
+        "chapter",
+        "shot"
+      ],
+      "title": "SummaryLevel",
+      "type": "string"
     },
     "TimeRange": {
       "additionalProperties": false,
@@ -2959,6 +3214,14 @@
     "media": {
       "$ref": "#/$defs/MediaInfo"
     },
+    "moments": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SemanticMoment"
+      },
+      "title": "Moments",
+      "type": "array"
+    },
     "relations": {
       "default": [],
       "items": {
@@ -2968,10 +3231,11 @@
       "type": "array"
     },
     "schema_version": {
-      "default": "0.2.0",
+      "default": "0.3.0",
       "enum": [
         "0.1.0",
-        "0.2.0"
+        "0.2.0",
+        "0.3.0"
       ],
       "title": "Schema Version",
       "type": "string"
@@ -2982,6 +3246,14 @@
         "$ref": "#/$defs/Segment"
       },
       "title": "Segments",
+      "type": "array"
+    },
+    "summaries": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SemanticSummary"
+      },
+      "title": "Summaries",
       "type": "array"
     }
   },

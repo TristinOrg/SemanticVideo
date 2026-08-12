@@ -3,6 +3,7 @@
 from semanticvideo.schema.annotation import (
     Annotation,
     AnnotationStatus,
+    ClaimNature,
     AudioAnnotation,
     AudioContentType,
     AudioInfo,
@@ -33,6 +34,9 @@ from semanticvideo.schema.document import (
     SegmentRelation,
     SegmentRelationType,
     SemanticVideoDocument,
+    SemanticMoment,
+    SemanticSummary,
+    SummaryLevel,
 )
 from semanticvideo.schema.edit import EditClip, EditPlan
 from semanticvideo.schema.entity import Entity, EntityType
@@ -64,6 +68,7 @@ __all__ = [
     "AudioStream",
     "CapabilityReport",
     "CapabilityStatus",
+    "ClaimNature",
     "Checksum",
     "CustomAnnotation",
     "EditClip",
@@ -93,6 +98,9 @@ __all__ = [
     "SegmentRelation",
     "SegmentRelationType",
     "SemanticVideoDocument",
+    "SemanticMoment",
+    "SemanticSummary",
+    "SummaryLevel",
     "SpatialRegion",
     "SpeechAnnotation",
     "SpeechInfo",
