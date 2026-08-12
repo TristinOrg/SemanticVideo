@@ -266,3 +266,55 @@ def test_render_uses_latest_plan(
     assert observed["plan"] == plan
     assert observed["path"] == output
     assert capsys.readouterr().out == f"Rendered {plan.id} to {output}\n"
+
+
+def test_gaps_reports_when_focused_inspection_is_needed(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    manifest = tmp_path / "clip.semantic.json"
+    manifest.write_text(plannable_document().model_dump_json(), encoding="utf-8")
+    assert main(["gaps", str(manifest), "--field", "ocr"]) == 1
+    assert json.loads(capsys.readouterr().out) == {"gaps": ["ocr"]}
+
+    assert (
+        main(
+            [
+                "gaps",
+                str(manifest),
+                "--field",
+                "ocr",
+                "--start",
+                "1",
+            ]
+        )
+        == 1
+    )
+    assert "supplied together" in capsys.readouterr().err
+
+
+def test_enrich_merges_supplement_atomically(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    manifest = tmp_path / "clip.semantic.json"
+    manifest.write_text(plannable_document().model_dump_json(), encoding="utf-8")
+    supplement = tmp_path / "supplement.json"
+    supplement.write_text(
+        json.dumps(
+            {
+                "capabilities": [
+                    {
+                        "name": "ocr",
+                        "status": "complete",
+                        "analyzed_fields": ["visible_text"],
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert main(["enrich", str(manifest), str(supplement)]) == 0
+    restored = SemanticVideoDocument.model_validate_json(
+        manifest.read_text(encoding="utf-8")
+    )
+    assert restored.capabilities[0].name == "ocr"
+    assert capsys.readouterr().out == f"Enriched {manifest}\n"

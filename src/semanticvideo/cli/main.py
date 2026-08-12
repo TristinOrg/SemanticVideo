@@ -3,14 +3,20 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 import tempfile
 from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from semanticvideo import SemanticVideoDocument, __version__
+from semanticvideo import RationalTime, SemanticVideoDocument, TimeRange, __version__
 from semanticvideo.analysis import analyze_video
+from semanticvideo.analysis.incremental import (
+    SemanticSupplement,
+    apply_supplement,
+    capability_gaps,
+)
 from semanticvideo.analysis.agent_task import prepare_agent_task
 from semanticvideo.analysis.pipeline import INCLUDE_CHOICES
 from semanticvideo.editing import (
@@ -256,6 +262,21 @@ def build_parser() -> argparse.ArgumentParser:
         "--timeout", type=_positive_float, default=3600.0, metavar="SECONDS"
     )
     render_parser.add_argument("--overwrite", action="store_true")
+
+    gaps_parser = commands.add_parser(
+        "gaps", help="Report semantic fields that require focused inspection."
+    )
+    gaps_parser.add_argument("manifest", type=Path)
+    gaps_parser.add_argument("--field", action="append", required=True)
+    gaps_parser.add_argument("--start", type=_non_negative_float)
+    gaps_parser.add_argument("--duration", type=_positive_float)
+
+    enrich_parser = commands.add_parser(
+        "enrich", help="Merge a validated focused-analysis supplement."
+    )
+    enrich_parser.add_argument("manifest", type=Path)
+    enrich_parser.add_argument("supplement", type=Path)
+    enrich_parser.add_argument("-o", "--output", type=Path)
     return parser
 
 
@@ -362,6 +383,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
             sys.stdout.write(f"Rendered {plan.id} to {rendered_output}\n")
             return 0
+        if args.command == "gaps":
+            document = _read_document(args.manifest)
+            requested_range = _optional_range(args.start, args.duration)
+            gaps = capability_gaps(
+                document, tuple(args.field), time_range=requested_range
+            )
+            sys.stdout.write(
+                f"{json.dumps({'gaps': gaps}, ensure_ascii=False)}\n"
+            )
+            return 1 if gaps else 0
+        if args.command == "enrich":
+            document = _read_document(args.manifest)
+            supplement = SemanticSupplement.model_validate_json(
+                args.supplement.read_text(encoding="utf-8")
+            )
+            updated = apply_supplement(document, supplement)
+            output = args.output or args.manifest
+            _write_document_atomic(updated, output)
+            sys.stdout.write(f"Enriched {output}\n")
+            return 0
     except (SemanticVideoError, OSError) as error:
         sys.stderr.write(f"error: {error}\n")
         return 1
@@ -397,6 +438,24 @@ def _positive_float(value: str) -> float:
     if parsed <= 0:
         raise argparse.ArgumentTypeError("must be greater than zero")
     return parsed
+
+
+def _non_negative_float(value: str) -> float:
+    parsed = float(value)
+    if parsed < 0:
+        raise argparse.ArgumentTypeError("must not be negative")
+    return parsed
+
+
+def _optional_range(start: float | None, duration: float | None) -> TimeRange | None:
+    if start is None and duration is None:
+        return None
+    if start is None or duration is None:
+        raise SemanticVideoError("--start and --duration must be supplied together")
+    return TimeRange(
+        start=RationalTime(value=round(start * 1_000_000), rate=1_000_000),
+        duration=RationalTime(value=round(duration * 1_000_000), rate=1_000_000),
+    )
 
 
 def _unit_float(value: str) -> float:
