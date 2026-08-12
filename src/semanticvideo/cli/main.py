@@ -12,12 +12,12 @@ from typing import Any
 
 from semanticvideo import RationalTime, SemanticVideoDocument, TimeRange, __version__
 from semanticvideo.analysis import analyze_video
+from semanticvideo.analysis.agent_task import prepare_agent_task
 from semanticvideo.analysis.incremental import (
     SemanticSupplement,
     apply_supplement,
     capability_gaps,
 )
-from semanticvideo.analysis.agent_task import prepare_agent_task
 from semanticvideo.analysis.pipeline import INCLUDE_CHOICES
 from semanticvideo.editing import (
     add_edit_plan,
@@ -33,6 +33,7 @@ from semanticvideo.providers import (
     OpenAIShotDescriber,
     OpenAITranscriber,
 )
+from semanticvideo.retrieval import load_index, read_documents, search, write_index
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -277,6 +278,19 @@ def build_parser() -> argparse.ArgumentParser:
     enrich_parser.add_argument("manifest", type=Path)
     enrich_parser.add_argument("supplement", type=Path)
     enrich_parser.add_argument("-o", "--output", type=Path)
+
+    index_parser = commands.add_parser(
+        "index", help="Build a disposable JSONL search index from manifests."
+    )
+    index_parser.add_argument("manifest", nargs="+", type=Path)
+    index_parser.add_argument("-o", "--output", required=True, type=Path)
+
+    search_parser = commands.add_parser(
+        "search", help="Search a derived SemanticVideo JSONL index."
+    )
+    search_parser.add_argument("index", type=Path)
+    search_parser.add_argument("query")
+    search_parser.add_argument("--limit", type=_positive_int, default=20)
     return parser
 
 
@@ -389,9 +403,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             gaps = capability_gaps(
                 document, tuple(args.field), time_range=requested_range
             )
-            sys.stdout.write(
-                f"{json.dumps({'gaps': gaps}, ensure_ascii=False)}\n"
-            )
+            sys.stdout.write(f"{json.dumps({'gaps': gaps}, ensure_ascii=False)}\n")
             return 1 if gaps else 0
         if args.command == "enrich":
             document = _read_document(args.manifest)
@@ -402,6 +414,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             output = args.output or args.manifest
             _write_document_atomic(updated, output)
             sys.stdout.write(f"Enriched {output}\n")
+            return 0
+        if args.command == "index":
+            count = write_index(read_documents(args.manifest), args.output)
+            sys.stdout.write(f"Indexed {count} semantic records to {args.output}\n")
+            return 0
+        if args.command == "search":
+            hits = search(load_index(args.index), args.query, limit=args.limit)
+            sys.stdout.write(
+                json.dumps(
+                    [item.model_dump(mode="json", exclude_none=True) for item in hits],
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
             return 0
     except (SemanticVideoError, OSError) as error:
         sys.stderr.write(f"error: {error}\n")
@@ -444,6 +470,13 @@ def _non_negative_float(value: str) -> float:
     parsed = float(value)
     if parsed < 0:
         raise argparse.ArgumentTypeError("must not be negative")
+    return parsed
+
+
+def _positive_int(value: str) -> int:
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError("must be greater than zero")
     return parsed
 
 

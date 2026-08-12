@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-import re
 import math
+import re
 import subprocess
 from fractions import Fraction
 from itertools import pairwise
@@ -110,9 +110,7 @@ def adaptive_representative_times(
         raise ValueError("adaptive frame counts must satisfy 1 <= min <= max <= 9")
     if maximum_interval_seconds <= 0:
         raise ValueError("maximum frame interval must be greater than zero")
-    desired = math.ceil(
-        float(time_range.duration_fraction) / maximum_interval_seconds
-    )
+    desired = math.ceil(float(time_range.duration_fraction) / maximum_interval_seconds)
     count = max(minimum_count, min(maximum_count, desired))
     return representative_times(time_range, count=count)
 

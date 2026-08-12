@@ -57,9 +57,9 @@ def test_supplement_preserves_human_claims_and_adds_moments(
                 }
             ],
             "annotations": [
-                document.annotations[0].model_copy(
-                    update={"status": AnnotationStatus.MACHINE_GENERATED}
-                ).model_dump()
+                document.annotations[0]
+                .model_copy(update={"status": AnnotationStatus.MACHINE_GENERATED})
+                .model_dump()
             ],
             "moments": [
                 {

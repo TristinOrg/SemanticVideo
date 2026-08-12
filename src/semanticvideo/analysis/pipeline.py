@@ -15,8 +15,8 @@ from pydantic import JsonValue
 
 from semanticvideo import __version__
 from semanticvideo.analysis.shots import (
-    build_shot_ranges,
     adaptive_representative_times,
+    build_shot_ranges,
     detect_shot_boundaries,
     extract_frame,
     representative_times,
@@ -43,11 +43,11 @@ from semanticvideo.schema import (
     AnalysisRun,
     Annotation,
     AnnotationStatus,
+    Artifact,
     AudioAnnotation,
     AudioContentType,
     AudioInfo,
     AudioStream,
-    Artifact,
     CapabilityReport,
     CapabilityStatus,
     Checksum,
@@ -67,11 +67,13 @@ from semanticvideo.schema import (
     SegmentKind,
     SegmentRelation,
     SegmentRelationType,
+    SemanticSummary,
     SemanticVideoDocument,
     SpeechAnnotation,
     SpeechInfo,
     SpeechWord,
     Stream,
+    SummaryLevel,
     TimeRange,
     VideoStream,
 )
@@ -532,8 +534,35 @@ def analyze_video(
         analysis_runs=(run,),
         capabilities=capabilities,
         relations=relations,
+        summaries=_summaries(observations, media.duration),
         extensions=extensions,
     )
+
+
+def _summaries(
+    observations: list[_ShotObservation], duration: RationalTime
+) -> tuple[SemanticSummary, ...]:
+    shot_summaries = tuple(
+        SemanticSummary(
+            id=f"summary.shot.{item.index:04d}",
+            level=SummaryLevel.SHOT,
+            text=item.description.resolved_summary,
+            time_range=item.time_range,
+            confidence=item.description.confidence,
+        )
+        for item in observations
+    )
+    video_text = " ".join(
+        dict.fromkeys(item.description.resolved_summary for item in observations)
+    )
+    video = SemanticSummary(
+        id="summary.video",
+        level=SummaryLevel.VIDEO,
+        text=video_text,
+        time_range=TimeRange(start=RationalTime(value=0, rate=1), duration=duration),
+        child_ids=tuple(item.id for item in shot_summaries),
+    )
+    return (video, *shot_summaries)
 
 
 def _speech_annotations(

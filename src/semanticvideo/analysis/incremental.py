@@ -84,7 +84,9 @@ def apply_supplement(
     capabilities.update((item.name, item) for item in supplement.capabilities)
 
     now = datetime.now(UTC)
-    added_annotation_ids = tuple(item.id for item in supplement.annotations if annotations.get(item.id) == item)
+    added_annotation_ids = tuple(
+        item.id for item in supplement.annotations if annotations.get(item.id) == item
+    )
     run = AnalysisRun(
         id=f"run.supplement.{now.strftime('%Y%m%dT%H%M%S%fZ')}",
         analyzer=supplement.analyzer,

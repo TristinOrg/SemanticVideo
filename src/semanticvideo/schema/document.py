@@ -241,7 +241,10 @@ class SemanticVideoDocument(SemanticModel):
                     )
 
         for artifact in self.artifacts:
-            if artifact.time_range is not None and artifact.time_range.end_fraction > media_end:
+            if (
+                artifact.time_range is not None
+                and artifact.time_range.end_fraction > media_end
+            ):
                 raise ValueError(f"artifact {artifact.id!r} exceeds media duration")
 
         for capability in self.capabilities:
@@ -259,7 +262,9 @@ class SemanticVideoDocument(SemanticModel):
                     "moment parent segment", moment.parent_segment_id, segment_ids
                 )
                 parent = next(
-                    item for item in self.segments if item.id == moment.parent_segment_id
+                    item
+                    for item in self.segments
+                    if item.id == moment.parent_segment_id
                 )
                 if not (
                     parent.time_range.start_fraction <= moment.time_range.start_fraction

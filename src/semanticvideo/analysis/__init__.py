@@ -5,12 +5,12 @@ from semanticvideo.analysis.agent_task import (
     AgentTaskBundle,
     prepare_agent_task,
 )
-from semanticvideo.analysis.pipeline import analyze_video
 from semanticvideo.analysis.incremental import (
     SemanticSupplement,
     apply_supplement,
     capability_gaps,
 )
+from semanticvideo.analysis.pipeline import analyze_video
 from semanticvideo.analysis.shots import (
     adaptive_representative_times,
     build_shot_ranges,
@@ -30,15 +30,15 @@ from semanticvideo.analysis.types import ShotDescriber, ShotDescription
 __all__ = [
     "AgentResponse",
     "AgentTaskBundle",
+    "SemanticSupplement",
     "ShotDescriber",
     "ShotDescription",
-    "SemanticSupplement",
     "Transcriber",
     "TranscriptResult",
     "TranscriptSegmentResult",
     "TranscriptWordResult",
-    "analyze_video",
     "adaptive_representative_times",
+    "analyze_video",
     "apply_supplement",
     "build_shot_ranges",
     "capability_gaps",

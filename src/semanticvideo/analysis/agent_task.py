@@ -9,8 +9,8 @@ from typing import Literal
 from pydantic import Field
 
 from semanticvideo.analysis.shots import (
-    build_shot_ranges,
     adaptive_representative_times,
+    build_shot_ranges,
     detect_shot_boundaries,
     extract_frame,
     representative_times,

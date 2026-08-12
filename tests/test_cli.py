@@ -318,3 +318,28 @@ def test_enrich_merges_supplement_atomically(
     )
     assert restored.capabilities[0].name == "ocr"
     assert capsys.readouterr().out == f"Enriched {manifest}\n"
+
+
+def test_index_and_search_commands(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    manifest = tmp_path / "clip.semantic.json"
+    document_data = plannable_document().model_dump()
+    document_data["moments"] = (
+        {
+            "id": "moment.1",
+            "time_range": plannable_document().segments[0].time_range,
+            "summary": "Tokyo station arrival",
+        },
+    )
+    document = SemanticVideoDocument.model_validate(document_data)
+    manifest.write_text(
+        document.model_dump_json(),
+        encoding="utf-8",
+    )
+    index = tmp_path / "index.jsonl"
+    assert main(["index", str(manifest), "-o", str(index)]) == 0
+    assert "Indexed 1 semantic records" in capsys.readouterr().out
+    assert main(["search", str(index), "Tokyo"]) == 0
+    hits = json.loads(capsys.readouterr().out)
+    assert hits[0]["record"]["source_id"] == "moment.1"
