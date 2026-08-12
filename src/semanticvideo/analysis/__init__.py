@@ -7,6 +7,7 @@ from semanticvideo.analysis.agent_task import (
 )
 from semanticvideo.analysis.pipeline import analyze_video
 from semanticvideo.analysis.shots import (
+    adaptive_representative_times,
     build_shot_ranges,
     detect_shot_boundaries,
     extract_frame,
@@ -31,6 +32,7 @@ __all__ = [
     "TranscriptSegmentResult",
     "TranscriptWordResult",
     "analyze_video",
+    "adaptive_representative_times",
     "build_shot_ranges",
     "detect_shot_boundaries",
     "extract_frame",

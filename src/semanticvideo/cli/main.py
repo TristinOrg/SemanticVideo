@@ -131,6 +131,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Representative frames sampled inside each shot, 1-9 (default: 3).",
     )
     analyze_parser.add_argument(
+        "--adaptive-frames",
+        action="store_true",
+        help="Increase representative frames for long shots (bounded to 9).",
+    )
+    analyze_parser.add_argument(
+        "--maximum-frame-interval",
+        type=_positive_float,
+        default=8.0,
+        metavar="SECONDS",
+        help="Maximum desired interval in adaptive mode (default: 8).",
+    )
+    analyze_parser.add_argument(
+        "--evidence-dir",
+        type=Path,
+        help="Persist representative JPEG evidence in this directory.",
+    )
+    analyze_parser.add_argument(
         "--include",
         action="append",
         choices=sorted(INCLUDE_CHOICES),
@@ -183,6 +200,10 @@ def build_parser() -> argparse.ArgumentParser:
     )
     prepare_parser.add_argument(
         "--frames-per-shot", type=_frame_count, default=3, metavar="COUNT"
+    )
+    prepare_parser.add_argument("--adaptive-frames", action="store_true")
+    prepare_parser.add_argument(
+        "--maximum-frame-interval", type=_positive_float, default=8.0
     )
     prepare_parser.add_argument("--ffmpeg", default="ffmpeg")
     prepare_parser.add_argument("--ffprobe", default="ffprobe")
@@ -256,6 +277,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 args.output.write_text(f"{rendered}\n", encoding="utf-8")
             return 0
         if args.command == "analyze":
+            output = args.output or args.input.with_suffix(".semantic.json")
             describer = _description_provider(args)
             agent_response = (
                 describer if isinstance(describer, AgentResponseProvider) else None
@@ -279,8 +301,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 imported_location=(
                     agent_response.location if agent_response is not None else None
                 ),
+                adaptive_frames=args.adaptive_frames,
+                maximum_frame_interval_seconds=args.maximum_frame_interval,
+                evidence_directory=args.evidence_dir,
             )
-            output = args.output or args.input.with_suffix(".semantic.json")
             rendered = document.model_dump_json(
                 indent=None if args.compact else 2,
                 exclude_none=True,
@@ -300,6 +324,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 scene_threshold=args.scene_threshold,
                 minimum_shot_duration=args.minimum_shot_duration,
                 frames_per_shot=args.frames_per_shot,
+                adaptive_frames=args.adaptive_frames,
+                maximum_frame_interval_seconds=args.maximum_frame_interval,
             )
             sys.stdout.write(
                 f"Wrote agent task with {len(bundle.shots)} shots to {output}\n"

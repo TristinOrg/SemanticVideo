@@ -200,6 +200,29 @@ def test_optional_information_stays_in_same_document(
     assert document.extensions["org.semanticvideo.ffprobe"] == {"raw": True}
 
 
+def test_analysis_can_persist_reusable_frame_evidence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    media_path = tmp_path / "trip.mp4"
+    media_path.write_bytes(b"clip")
+    configure_pipeline(monkeypatch, media_path)
+    evidence_directory = tmp_path / "trip.semantic" / "keyframes"
+
+    document = pipeline.analyze_video(
+        media_path,
+        describer=StubDescriber(),
+        adaptive_frames=True,
+        evidence_directory=evidence_directory,
+    )
+
+    assert len(document.artifacts) == 6
+    assert all(Path(item.uri).is_file() for item in document.artifacts)
+    assert all(item.checksum for item in document.artifacts)
+    scene = next(item for item in document.annotations if item.kind == "scene")
+    assert all(item.artifact_id for item in scene.evidence)
+    assert document.analysis_runs[0].parameters["adaptive_frames"] is True
+
+
 def test_analyze_rejects_unknown_optional_information(tmp_path: Path) -> None:
     with pytest.raises(ValueError, match="unknown optional"):
         pipeline.analyze_video(

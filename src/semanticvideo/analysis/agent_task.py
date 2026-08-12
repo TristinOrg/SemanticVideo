@@ -10,6 +10,7 @@ from pydantic import Field
 
 from semanticvideo.analysis.shots import (
     build_shot_ranges,
+    adaptive_representative_times,
     detect_shot_boundaries,
     extract_frame,
     representative_times,
@@ -57,6 +58,8 @@ def prepare_agent_task(
     scene_threshold: float = 0.3,
     minimum_shot_duration: float = 0.5,
     frames_per_shot: int = 3,
+    adaptive_frames: bool = False,
+    maximum_frame_interval_seconds: float = 8.0,
 ) -> AgentTaskBundle:
     """Extract bounded evidence plus schemas for Codex or another external agent."""
 
@@ -85,9 +88,16 @@ def prepare_agent_task(
     for index, time_range in enumerate(ranges, start=1):
         shot_id = f"shot.{index:04d}"
         frame_uris: list[str] = []
-        for frame_index, timestamp in enumerate(
-            representative_times(time_range, count=frames_per_shot), start=1
-        ):
+        timestamps = (
+            adaptive_representative_times(
+                time_range,
+                minimum_count=frames_per_shot,
+                maximum_interval_seconds=maximum_frame_interval_seconds,
+            )
+            if adaptive_frames
+            else representative_times(time_range, count=frames_per_shot)
+        )
+        for frame_index, timestamp in enumerate(timestamps, start=1):
             filename = f"{shot_id}.{frame_index:02d}.jpg"
             output = frames_directory / filename
             extract_frame(

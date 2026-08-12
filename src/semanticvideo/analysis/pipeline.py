@@ -16,6 +16,7 @@ from pydantic import JsonValue
 from semanticvideo import __version__
 from semanticvideo.analysis.shots import (
     build_shot_ranges,
+    adaptive_representative_times,
     detect_shot_boundaries,
     extract_frame,
     representative_times,
@@ -46,6 +47,7 @@ from semanticvideo.schema import (
     AudioContentType,
     AudioInfo,
     AudioStream,
+    Artifact,
     CapabilityReport,
     CapabilityStatus,
     Checksum,
@@ -105,6 +107,9 @@ def analyze_video(
     transcriber: Transcriber | None = None,
     transcript: TranscriptResult | None = None,
     imported_location: LocationInfo | None = None,
+    adaptive_frames: bool = False,
+    maximum_frame_interval_seconds: float = 8.0,
+    evidence_directory: Path | None = None,
 ) -> SemanticVideoDocument:
     """Generate one complete editing-oriented SemanticVideo JSON document."""
 
@@ -137,12 +142,23 @@ def analyze_video(
     )
 
     observations: list[_ShotObservation] = []
+    artifacts: list[Artifact] = []
     transcript_result = transcript
     with tempfile.TemporaryDirectory(prefix="semanticvideo-") as temp_directory:
-        frame_directory = Path(temp_directory)
+        temporary_directory = Path(temp_directory)
+        frame_directory = evidence_directory or temporary_directory
+        frame_directory.mkdir(parents=True, exist_ok=True)
         for index, time_range in enumerate(ranges, start=1):
             shot_id = f"shot.{index:04d}"
-            timestamps = representative_times(time_range, count=frames_per_shot)
+            timestamps = (
+                adaptive_representative_times(
+                    time_range,
+                    minimum_count=frames_per_shot,
+                    maximum_interval_seconds=maximum_frame_interval_seconds,
+                )
+                if adaptive_frames
+                else representative_times(time_range, count=frames_per_shot)
+            )
             frames: list[Path] = []
             for frame_index, timestamp in enumerate(timestamps, start=1):
                 frame = frame_directory / f"{shot_id}.{frame_index:02d}.jpg"
@@ -154,6 +170,21 @@ def analyze_video(
                     timeout_seconds=timeout_seconds,
                 )
                 frames.append(frame)
+                if evidence_directory is not None:
+                    artifacts.append(
+                        Artifact(
+                            id=f"artifact.frame.{index:04d}.{frame_index:02d}",
+                            type="representative_frame",
+                            uri=str(frame),
+                            media_type="image/jpeg",
+                            checksum=_sha256(frame),
+                            time_range=TimeRange(
+                                start=timestamp,
+                                duration=RationalTime(value=1, rate=1_000_000),
+                            ),
+                            metadata={"shot_id": shot_id},
+                        )
+                    )
             frame_tuple = tuple(frames)
             observations.append(
                 _ShotObservation(
@@ -167,7 +198,7 @@ def analyze_video(
                 )
             )
         if transcriber is not None:
-            audio_file = frame_directory / "transcription.mp3"
+            audio_file = temporary_directory / "transcription.mp3"
             extract_audio(
                 media_path,
                 audio_file,
@@ -227,13 +258,33 @@ def analyze_video(
             {"value": timestamp.value, "rate": timestamp.rate}
             for timestamp in item.representative_times
         ]
+        frame_artifacts = tuple(
+            artifact
+            for artifact in artifacts
+            if artifact.metadata.get("shot_id") == item.shot_id
+        )
+        evidence_items = (
+            tuple(
+                Evidence(
+                    type="representative_frame",
+                    value=timestamp,
+                    artifact_id=artifact.id,
+                )
+                for timestamp, artifact in zip(
+                    timestamp_value, frame_artifacts, strict=True
+                )
+            )
+            if frame_artifacts
+            else ()
+        )
         evidence = Evidence(type="representative_frames", value=timestamp_value)
+        description_evidence = evidence_items or (evidence,)
         description_provenance = Provenance(
             source=describer.source,
             generated_at=started_at,
             generator=description_provenance_base,
             confidence=item.description.confidence,
-            evidence=(evidence,),
+            evidence=description_evidence,
         )
         annotations.append(
             SceneAnnotation(
@@ -242,7 +293,7 @@ def analyze_video(
                 status=describer.status,
                 confidence=item.description.confidence,
                 provenance=(description_provenance,),
-                evidence=(evidence,),
+                evidence=description_evidence,
                 value=SceneInfo(
                     summary=item.description.resolved_summary,
                     environment=item.description.environment,
@@ -464,6 +515,8 @@ def analyze_video(
             "scene_threshold": scene_threshold,
             "minimum_shot_duration": minimum_shot_duration,
             "frames_per_shot": frames_per_shot,
+            "adaptive_frames": adaptive_frames,
+            "maximum_frame_interval_seconds": maximum_frame_interval_seconds,
             "language": language,
             "include": sorted(include),
         },
@@ -475,6 +528,7 @@ def analyze_video(
         media=media,
         segments=tuple(segments),
         annotations=tuple(annotations),
+        artifacts=tuple(artifacts),
         analysis_runs=(run,),
         capabilities=capabilities,
         relations=relations,

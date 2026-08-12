@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import math
 import subprocess
 from fractions import Fraction
 from itertools import pairwise
@@ -94,6 +95,26 @@ def representative_times(
         )
         for index in range(1, count + 1)
     )
+
+
+def adaptive_representative_times(
+    time_range: TimeRange,
+    *,
+    minimum_count: int = 3,
+    maximum_count: int = 9,
+    maximum_interval_seconds: float = 8.0,
+) -> tuple[RationalTime, ...]:
+    """Scale evidence density with shot duration while keeping a hard bound."""
+
+    if not 1 <= minimum_count <= maximum_count <= 9:
+        raise ValueError("adaptive frame counts must satisfy 1 <= min <= max <= 9")
+    if maximum_interval_seconds <= 0:
+        raise ValueError("maximum frame interval must be greater than zero")
+    desired = math.ceil(
+        float(time_range.duration_fraction) / maximum_interval_seconds
+    )
+    count = max(minimum_count, min(maximum_count, desired))
+    return representative_times(time_range, count=count)
 
 
 def extract_frame(

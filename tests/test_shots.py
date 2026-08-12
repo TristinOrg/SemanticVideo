@@ -90,6 +90,18 @@ def test_representative_times_sample_inside_shot() -> None:
         shots.representative_times(time_range, count=0)
 
 
+def test_adaptive_representative_times_scale_with_duration() -> None:
+    short = shots.build_shot_ranges(RationalTime(value=4, rate=1), ())[0]
+    long = shots.build_shot_ranges(RationalTime(value=80, rate=1), ())[0]
+
+    assert len(shots.adaptive_representative_times(short)) == 3
+    assert len(shots.adaptive_representative_times(long)) == 9
+    with pytest.raises(ValueError, match="min <= max"):
+        shots.adaptive_representative_times(short, minimum_count=5, maximum_count=2)
+    with pytest.raises(ValueError, match="greater than zero"):
+        shots.adaptive_representative_times(short, maximum_interval_seconds=0)
+
+
 def test_extract_frame_requires_written_output(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
